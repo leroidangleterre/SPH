@@ -1,4 +1,3 @@
-
 import java.awt.Color;
 import java.awt.Graphics;
 import java.util.ArrayList;
@@ -18,7 +17,7 @@ public class World {
     private double elemSize;
 
     // Elasticity of the outer boundaries of the terrain
-    private double boundaryElasticity = 0.1;
+    private double boundaryElasticity = 0.01;
 
     // The objects that interact with the particles.
     private ArrayList<Rectangle> rectangleList;
@@ -39,7 +38,7 @@ public class World {
     // Radius of the particles.
     private double radius = 1.0;
 
-    private double gravitySave = -450.0;
+    private double gravitySave = -80.0; //-800.0;
     private double gravity;
 
     // Initial values of the sources and holes at their creation.
@@ -120,6 +119,10 @@ public class World {
 
 //        this.setWallsForTest();
 //        this.setRectanglesForTest();
+        for (int i = 0; i < 40; i++) {
+            double y = .5 * i - 9;
+            createOneParticle(0, y, 0, 0);
+        }
     }
 
     /**
@@ -415,6 +418,13 @@ public class World {
                 }
             }
 
+            // Rectangle repulsion on the particles.
+            for (int i = 0; i < this.nbLines; i++) {
+                for (int j = 0; j < this.nbColumns; j++) {
+                    this.getSquare(i, j).processRectangles(this.rectangleList);
+                }
+            }
+
 //            Density computation
             for (int i = 0; i < this.nbLines; i++) {
                 for (int j = 0; j < this.nbColumns; j++) {
@@ -442,19 +452,6 @@ public class World {
                     this.getSquare(i, j).computeForces();
                 }
             }
-            // Uniform friction applied to all particles (test purpose, TODO: delete this.)
-            for (int i = 0; i < this.nbLines; i++) {
-                for (int j = 0; j < this.nbColumns; j++) {
-                    this.getSquare(i, j).applyFriction();
-                }
-            }
-
-            // Rectangle repulsion on the particles.
-            for (int i = 0; i < this.nbLines; i++) {
-                for (int j = 0; j < this.nbColumns; j++) {
-                    this.getSquare(i, j).processRectangles(this.rectangleList);
-                }
-            }
 
             // Compute the speed of all particles of each square.
             for (int i = 0; i < this.nbLines; i++) {
@@ -463,13 +460,6 @@ public class World {
                 }
             }
 
-            // Some squares may have an influence on the speeds.
-//            for (int i = 0; i < 4; i++) {
-//                int line = this.nbLines - 1 - i;
-//                int col = 0;
-//                this.getSquare(line, col).influenceMeanSpeed(0.0, 100.0);
-//                this.getSquare(line - 4, col).influenceMeanSpeed(200.0, 90.0);
-//            }
             // Move the particles at their current speed.
             for (int i = 0; i < this.tab.size(); i++) {
                 ArrayList<Square> ligne = this.tab.get(i);
@@ -510,27 +500,16 @@ public class World {
                 this.reinjectParticle(p, dt);
             }
 
-            System.out.println(this.getNbParticles() + " p");
-
+//            System.out.println(this.getNbParticles() + " p");
         } catch (InterruptedException ex) {
             System.out.println("World.evolve: InterruptedException");
         }
         sem.release();
 
-        // Test:
-        boolean found = false;
-        for (ArrayList<Square> line : this.tab) {
-            for (Square s : line) {
-                for (int i = 0; i < s.getNbParticules(); i++) {
-                    Particle p = s.getParticule(i);
-//					System.out.println("Particle : " + p);
-                    found = true;
-                }
-            }
-        }
-        if (!found) {
-            System.out.println("No particles");
-        }
+//        System.out.println("World evolve. Energy: \n"
+//                + "    Ke: " + this.getKineticEnergy() + "\n"
+//                + "    Pe: " + this.getPotentialEnergy(Math.abs(gravity)) + "\n"
+//                + " Total: " + (this.getKineticEnergy() + this.getPotentialEnergy(Math.abs(gravity))));
     }
 
     /**
@@ -541,10 +520,8 @@ public class World {
         int i;
         int j;
 
-        double deltaSpeed = 0.1;
-
-        double speedDamping = 0.0;
-
+//        double deltaSpeed = 0.1;
+//        double speedDamping = 0.0;
         // Special case: particles that reach the outer limits of the terrain.
         if (p.getLineNum() < 0) {
             p.setLineNum(0);
@@ -590,8 +567,8 @@ public class World {
 
         // These values are converted to be expressed in the panel ref.
         /*
-		 * NB: int xApp=(int)(this.getX()*zoom+x0); int
-		 * yApp=(int)(hauteurPanneau - (this.getY()*zoom+y0));
+         * NB: int xApp=(int)(this.getX()*zoom+x0); int
+         * yApp=(int)(hauteurPanneau - (this.getY()*zoom+y0));
          */
         int xLeftApp = (int) (xLeft * zoom + x0);
         int xRightApp = (int) (xRight * zoom + x0);
@@ -676,30 +653,32 @@ public class World {
         } else {
             this.rectangleBeingDrawn = false;
 
-            switch (tool) {
-            case PARTICLE_SELECTION:
-                this.selectParticles();
-                break;
-            case PARTICLE_CREATION:
-                this.createParticles();
-                break;
-            case RECTANGLE:
-                this.createRectangle();
-                break;
-            case WALL_SQUARE:
-                this.addWalls();
-                break;
-            case SOURCE_SQUARE:
-                this.addSources(true);
-                break;
-            case HOLE_SQUARE:
-                this.addSources(false);
-                break;
-            case EMPTY_SQUARE:
-                this.addEmptySquares();
-                break;
-            default:
-                break;
+            if (tool != null) {
+                switch (tool) {
+                    case PARTICLE_SELECTION:
+                        this.selectParticles();
+                        break;
+                    case PARTICLE_CREATION:
+                        this.createParticles();
+                        break;
+                    case RECTANGLE:
+                        this.createRectangle();
+                        break;
+                    case WALL_SQUARE:
+                        this.addWalls();
+                        break;
+                    case SOURCE_SQUARE:
+                        this.addSources(true);
+                        break;
+                    case HOLE_SQUARE:
+                        this.addSources(false);
+                        break;
+                    case EMPTY_SQUARE:
+                        this.addEmptySquares();
+                        break;
+                    default:
+                        break;
+                }
             }
         }
     }
@@ -796,6 +775,21 @@ public class World {
             }
             sem.release();
         } catch (InterruptedException e) {
+        }
+    }
+
+    /**
+     * Create one particle at the given coordinates.
+     *
+     * @param x
+     * @param y
+     */
+    public void createOneParticle(double x, double y, double vx, double vy) {
+        Square target = this.getSquareFromCoordinates(x, y);
+        if (target != null) {
+            target.createParticle(x, y, vx, vy);
+        } else {
+            System.out.println("square does not exist");
         }
     }
 
@@ -976,7 +970,8 @@ public class World {
                 Square c = this.getSquare(i, j);
 
                 if (c.isIncludedInRectangle(xG, xD, yB, yH)) {
-                    c.setHole(-1);
+                    int nbPartDeletedPerFrame = 1;
+                    c.setHole(nbPartDeletedPerFrame);
                 }
             }
         }
@@ -1071,20 +1066,6 @@ public class World {
         return res;
     }
 
-    /**
-     * Get the total amount of particles.
-     */
-    public int getNbParticules() {
-        int res = 0;
-        for (int i = 0; i < this.tab.size(); i++) {
-            for (int j = 0; j < this.tab.get(i).size(); j++) {
-                Square s = this.getSquare(i, j);
-                res = res + s.getNbParticules();
-            }
-        }
-        return res;
-    }
-
     private void createRectangle() {
         if (this.rectangleList == null) {
             this.rectangleList = new ArrayList<Rectangle>();
@@ -1093,7 +1074,15 @@ public class World {
         double height = Math.abs(yClick - yRelease);
         double xCenter = (xClick + xRelease) / 2;
         double yCenter = (yClick + yRelease) / 2;
-        this.rectangleList.add(new Rectangle(xCenter, yCenter, width, height, boundaryElasticity));
+        Rectangle newRect = new Rectangle(xCenter, yCenter, width, height, boundaryElasticity);
+        this.rectangleList.add(newRect);
+//        // Add the particles of this rectangle to the squares of this world.
+//        for(Particle p : newRect.getParticleList()){
+//            Square target = this.getSquareFromCoordinates(p.getX(), p.getY());
+//            if(target != null){
+//                target.receiveParticle(p);
+//            }
+//        }
     }
 
     public void increaseParticleRadii() {
@@ -1133,5 +1122,16 @@ public class World {
             }
         }
         return res;
+    }
+
+    void duplicateSelected() {
+
+        for (ArrayList<Square> line : this.tab) {
+            for (Square s : line) {
+                s.duplicateSelection();
+            }
+        }
+
+        selectionBeingMoved = true;
     }
 }

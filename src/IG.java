@@ -1,4 +1,3 @@
-
 import java.awt.BorderLayout;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -34,6 +33,10 @@ public class IG {
     // Real-time duration of the timer ticks.
     private long timerPeriod;
 
+    private Timer particleCountTimer;
+
+    private boolean isDuplicating;
+
     public IG(World wParam) {
         this.world = wParam;
         this.window = new JFrame();
@@ -41,7 +44,7 @@ public class IG {
         this.window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.panel = new GraphicPanel(this.world);
 
-        this.initWindowWidth = 1600;
+        this.initWindowWidth = 1200;
         this.initWindowHeight = 1000;
 
         this.mouseMotionListener = new MouseMotionListener(this.panel);
@@ -57,8 +60,19 @@ public class IG {
         this.leftClickActive = false;
         this.mouseWheelClickActive = false;
         this.rightClickActive = false;
-        this.panel.setCurrentTool(Tool.RECTANGLE);
+        this.panel.setCurrentTool(Tool.PARTICLE_SELECTION);
         this.window.setTitle("Rectangle");
+        this.particleCountTimer = new Timer();
+        this.isDuplicating = false;
+        TimerTask countTask = new TimerTask() {
+
+            @Override
+            public void run() {
+                window.setTitle("SPH: " + world.getNbParticles());
+//                System.out.println("count: " + world.getNbParticles());
+            }
+        };
+        particleCountTimer.schedule(countTask, 0, 1000); // Start immediately, run once every second.
 
         /* Menu. */
         this.menu = new Menu(this.panel);
@@ -85,8 +99,8 @@ public class IG {
         int displayPeriod = 30;
         displayTimer.schedule(displayTask, 0, displayPeriod);
 
-        this.timerPeriod = 15;
-        this.worldPeriod = 0.0003;//0.0010;
+        this.timerPeriod = 10;
+        this.worldPeriod = 0.003;//0.0010;
 
         this.resetAndStartTimer(timerPeriod);
     }
@@ -106,8 +120,8 @@ public class IG {
     }
 
     /*
-	 * La classe qui définit l'action à effectuer à chaque fois que le timer
-	 * se réveille.
+     * La classe qui définit l'action à effectuer à chaque fois que le timer
+     * se réveille.
      */
     private class EvolutionTimerTask extends TimerTask {
 
@@ -146,9 +160,9 @@ public class IG {
     }
 
     /*
-	 * La classe EcouteurMouvementSouris permet d'actualiser à chaque
-	 * déplacement les informations que l'IG possède à propos de la position
-	 * de la souris.
+     * La classe EcouteurMouvementSouris permet d'actualiser à chaque
+     * déplacement les informations que l'IG possède à propos de la position
+     * de la souris.
      */
     private class MouseMotionListener extends MouseAdapter {
 
@@ -242,20 +256,21 @@ public class IG {
 
     private class MouseWheelMotionListener implements MouseWheelListener {
 
-        private GraphicPanel panneau;
+        private GraphicPanel panel;
 
         public MouseWheelMotionListener(GraphicPanel p) {
-            this.panneau = p;
+            this.panel = p;
         }
 
         @Override
         public void mouseWheelMoved(MouseWheelEvent ev) {
-            panneau.zoom(ev.getX(), ev.getY(), ev.getWheelRotation());
+            System.out.println("wheelrotation: " + ev.getPreciseWheelRotation());
+            panel.zoom(ev.getX(), ev.getY(), ev.getPreciseWheelRotation());
             /*
-			 * NB: le paramètre getWheelRotation est positif si on scrolle vers
-			 * le haut.
+             * NB: le paramètre getWheelRotation est positif si on scrolle vers
+             * le haut.
              */
-            panneau.repaint();
+            panel.repaint();
         }
     }
 
@@ -272,120 +287,127 @@ public class IG {
 
             switch (e.getKeyCode()) {
 
-            case KeyEvent.VK_A:
-                world.selectEverything();
-                break;
+                case KeyEvent.VK_A:
+                    world.selectEverything();
+                    break;
 
-            case KeyEvent.VK_B:
-                world.blockSpeeds();
-                break;
+                case KeyEvent.VK_B:
+                    world.blockSpeeds();
+                    break;
 
-            case KeyEvent.VK_S:
-                this.panneau.setCurrentTool(Tool.PARTICLE_SELECTION);
-                System.out.println("SELECTION_PARTICULES");
-                window.setTitle("SELECTION_PARTICULES");
-                break;
-            case KeyEvent.VK_R:
-                this.panneau.setCurrentTool(Tool.RECTANGLE);
-                System.out.println("RECTANGLE");
-                window.setTitle("RECTANGLE");
-                break;
-            case KeyEvent.VK_C:
-                panneau.setCurrentTool(Tool.SOURCE_SQUARE);
-                break;
-
-            /* Switch gravity on or off. */
-            case KeyEvent.VK_G:
-                world.toggleGravity();
-                break;
-
-            case KeyEvent.VK_TAB:
-                if (this.panneau.getCurrentTool() == Tool.PARTICLE_SELECTION) {
-                    /* Création de carreaux. */
-                    this.panneau.setCurrentTool(Tool.CREATION_CARREAUX);
-                    System.out.println("CREATION_CARREAUX");
-                    window.setTitle("CREATION_CARREAUX");
-                }
-                if (this.panneau.getCurrentTool() == Tool.SELECTION_CARREAUX) {
-                    /* Sélection de carreaux. */
-                    this.panneau.setCurrentTool(Tool.SELECTION_CARREAUX);
-                    System.out.println("SELECTION_CARREAUX");
-                    window.setTitle("SELECTION_CARREAUX");
-                }
-                if (this.panneau.getCurrentTool() == Tool.SELECTION_CARREAUX) {
-                    /*
-					 * Création de rectangle (qui interagissent avec les
-					 * particules).
-                     */ // TODO
-                    this.panneau.setCurrentTool(Tool.RECTANGLE);
-                    System.out.println("RECTANGLE");
-                    window.setTitle("RECTANGLE");
-                } else if (this.panneau.getCurrentTool() == Tool.RECTANGLE) {
-                    /* Création de particules. */
-                    this.panneau.setCurrentTool(Tool.PARTICLE_CREATION);
-                    System.out.println("CREATION_PARTICULE");
-                    window.setTitle("CREATION_PARTICULE");
-                } else if (this.panneau.getCurrentTool() == Tool.PARTICLE_CREATION) {
-                    /* Sélection de particules. */
+                case KeyEvent.VK_S:
                     this.panneau.setCurrentTool(Tool.PARTICLE_SELECTION);
                     System.out.println("SELECTION_PARTICULES");
                     window.setTitle("SELECTION_PARTICULES");
-                }
-                break;
-            case KeyEvent.VK_CONTROL:
-                world.increaseNbCtrlPressed();
-                break;
-            case KeyEvent.VK_DELETE:
-                world.deleteSelection();
-                this.panneau.repaint();
-                break;
-            case KeyEvent.VK_ENTER:
-                /* Effectuer un pas d'exécution. */
-                world.evoluerManuel(worldPeriod);
-                break;
-            case KeyEvent.VK_P:
-            /* Play/pause. */
-            case KeyEvent.VK_SPACE:
-                /* Play/pause. */
-                System.out.println("Play/Pause");
-                world.switchPlayPause();
-                break;
-            case KeyEvent.VK_Z:
-            // On ne break pas, la touche Z sert à faire le zoom
-            // automatique.
-            case KeyEvent.VK_NUMPAD0:
-                this.panneau.zoomAuto();
-                break;
-            case KeyEvent.VK_ADD:
-                timerPeriod += 100;
-                System.out.println("timer period: " + timerPeriod + " ms;");
-                resetAndStartTimer(timerPeriod);
-                break;
-            case KeyEvent.VK_SUBTRACT:
-                timerPeriod = Math.max(timerPeriod - 100, 100);
-                System.out.println("timer period: " + timerPeriod + " ms;");
-                resetAndStartTimer(timerPeriod);
-                break;
-            case KeyEvent.VK_LEFT:
-                world.rotateAllRectangles(0.1);
+                    break;
+                case KeyEvent.VK_R:
+                    this.panneau.setCurrentTool(Tool.RECTANGLE);
+                    System.out.println("RECTANGLE");
+                    window.setTitle("RECTANGLE");
+                    break;
+                case KeyEvent.VK_C:
+                    panneau.setCurrentTool(Tool.SOURCE_SQUARE);
+                    break;
 
-                break;
-            case KeyEvent.VK_RIGHT:
-                world.rotateAllRectangles(-0.1);
-                break;
-            default:
-            /* Pas de changement. */
+                /* Switch gravity on or off. */
+                case KeyEvent.VK_G:
+                    world.toggleGravity();
+                    break;
+
+                case KeyEvent.VK_D:
+                    panneau.setDuplicating(true);
+                    world.duplicateSelected();
+                    // Waiting for a click to place the duplicated particles.
+                    break;
+
+                case KeyEvent.VK_TAB:
+                    if (this.panneau.getCurrentTool() == Tool.PARTICLE_SELECTION) {
+                        /* Création de carreaux. */
+                        this.panneau.setCurrentTool(Tool.CREATION_CARREAUX);
+                        System.out.println("CREATION_CARREAUX");
+                        window.setTitle("CREATION_CARREAUX");
+                    }
+                    if (this.panneau.getCurrentTool() == Tool.SELECTION_CARREAUX) {
+                        /* Sélection de carreaux. */
+                        this.panneau.setCurrentTool(Tool.SELECTION_CARREAUX);
+                        System.out.println("SELECTION_CARREAUX");
+                        window.setTitle("SELECTION_CARREAUX");
+                    }
+                    if (this.panneau.getCurrentTool() == Tool.SELECTION_CARREAUX) {
+                        /*
+                         * Création de rectangle (qui interagissent avec les
+                         * particules).
+                         */ // TODO
+                        this.panneau.setCurrentTool(Tool.RECTANGLE);
+                        System.out.println("RECTANGLE");
+                        window.setTitle("RECTANGLE");
+                    } else if (this.panneau.getCurrentTool() == Tool.RECTANGLE) {
+                        /* Création de particules. */
+                        this.panneau.setCurrentTool(Tool.PARTICLE_CREATION);
+                        System.out.println("CREATION_PARTICULE");
+                        window.setTitle("CREATION_PARTICULE");
+                    } else if (this.panneau.getCurrentTool() == Tool.PARTICLE_CREATION) {
+                        /* Sélection de particules. */
+                        this.panneau.setCurrentTool(Tool.PARTICLE_SELECTION);
+                        System.out.println("SELECTION_PARTICULES");
+                        window.setTitle("SELECTION_PARTICULES");
+                    }
+                    break;
+                case KeyEvent.VK_CONTROL:
+                    world.increaseNbCtrlPressed();
+                    break;
+                case KeyEvent.VK_DELETE:
+                    world.deleteSelection();
+                    this.panneau.repaint();
+                    break;
+                case KeyEvent.VK_ENTER:
+                    /* Effectuer un pas d'exécution. */
+                    world.evoluerManuel(worldPeriod);
+                    break;
+                case KeyEvent.VK_P:
+                /* Play/pause. */
+                case KeyEvent.VK_SPACE:
+                    /* Play/pause. */
+                    System.out.println("Play/Pause");
+                    world.switchPlayPause();
+                    break;
+                case KeyEvent.VK_Z:
+                // On ne break pas, la touche Z sert à faire le zoom
+                // automatique.
+                case KeyEvent.VK_NUMPAD0:
+                    this.panneau.zoomAuto();
+                    break;
+                case KeyEvent.VK_ADD:
+                    timerPeriod += 10;
+                    System.out.println("timer period: " + timerPeriod + " ms;");
+                    resetAndStartTimer(timerPeriod);
+                    break;
+                case KeyEvent.VK_SUBTRACT:
+                    System.out.println("prev period: " + timerPeriod);
+                    timerPeriod = Math.max(timerPeriod - 10, 10);
+                    System.out.println("timer period: " + timerPeriod + " ms;");
+                    resetAndStartTimer(timerPeriod);
+                    break;
+                case KeyEvent.VK_LEFT:
+                    world.rotateAllRectangles(0.1);
+
+                    break;
+                case KeyEvent.VK_RIGHT:
+                    world.rotateAllRectangles(-0.1);
+                    break;
+                default:
+                /* Pas de changement. */
             }
         }
 
         @Override
         public void keyReleased(KeyEvent e) {
             switch (e.getKeyCode()) {
-            case KeyEvent.VK_CONTROL:
-                world.decreaseNbCtrlPressed();
-                break;
-            default:
-            /* Pas de changement. */
+                case KeyEvent.VK_CONTROL:
+                    world.decreaseNbCtrlPressed();
+                    break;
+                default:
+                /* Pas de changement. */
             }
         }
 

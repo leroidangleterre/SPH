@@ -1,4 +1,3 @@
-
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
@@ -11,14 +10,17 @@ public class Particle {
     // Either rigid bodies or SPH.
     public static boolean rigidCollision = false;
 
+    public static double defaultRadius = 0.5;
+
     private Vecteur position;
+    private boolean movementAllowed; // True for most particles, false for particles that make a rectangle.
     private Vecteur speed, vAvg; // Current and average speed
     private ArrayList<Vecteur> speedList; // Last known speeds
     private ArrayList<Vecteur> positionList; // Last known positions
     private int nbPrevPos;
     private boolean selected;
     private double radius, radiusMin, radiusMax;
-    private double viscosity;
+    private double viscosity = 0.1;
     private double mass, density, pressure;
     private double pressureCst, refDensity; // Pressure is computed as pressureCst * (density - refDensity);
     private Vecteur force; // The force applied on this particle by others
@@ -41,6 +43,7 @@ public class Particle {
 
     public Particle(double xParam, double yParam, double rayonParam, int numLigneParam, int numColonneParam) {
         this.position = new Vecteur(xParam, yParam);
+        System.out.println("New particle at (" + xParam + ", " + yParam + ";)");
         this.speed = new Vecteur();
         this.vAvg = new Vecteur();
         this.force = new Vecteur();
@@ -54,46 +57,50 @@ public class Particle {
         this.radiusMin = 1 * radius;
         this.numLine = numLigneParam;
         this.numColumn = numColonneParam;
-        this.mass = 0.2;// 1.0
-        this.viscosity = 1.0;
+        this.mass = 0.02;// 1.0
         this.pressureCst = 10000;
         this.refDensity = 1.0;
         Random r = new Random();
-        this.alpha = 10;
+        this.alpha = 50;
         this.color = new Color(r.nextInt(206) + 50, r.nextInt(206) + 50, r.nextInt(206) + 50, this.alpha);
         this.serialNumber = Particle.nbParticlesCreated;
         Particle.nbParticlesCreated++;
-        this.speedList = new ArrayList<Vecteur>();
+        this.speedList = new ArrayList<>();
         this.nMoy = 10;
         for (int i = 0; i < nMoy; i++) {
             this.speedList.add(new Vecteur());
         }
-        this.positionList = new ArrayList<Vecteur>();
-        this.nbPrevPos = 0;
+        this.positionList = new ArrayList<>();
+        this.nbPrevPos = 60;
         for (int i = 0; i < nbPrevPos; i++) {
             this.positionList.add(new Vecteur(this.position));
         }
         this.selected = false;
-        this.coloredPointList = new ArrayList<PointCouleur>();
+        this.coloredPointList = new ArrayList<>();
 
         this.coloredPointList.add(new PointCouleur(1, 1, 255, 0, 0)); // red
-        this.coloredPointList.add(new PointCouleur(2, 1, 255, 128, 0)); // orange
-        this.coloredPointList.add(new PointCouleur(3, 1, 255, 255, 0)); // yellow
-        this.coloredPointList.add(new PointCouleur(4, 1, 230, 230, 230)); // gray
-        this.coloredPointList.add(new PointCouleur(5, 1, 0, 255, 255)); // light blue
-        this.coloredPointList.add(new PointCouleur(6, 1, 255, 0, 255)); // violet
-        this.coloredPointList.add(new PointCouleur(7, 1, 0, 0, 0)); // black
-        this.coloredPointList.add(new PointCouleur(8, 1, 128, 128, 128)); // gray
+        this.coloredPointList.add(new PointCouleur(1.1, 1, 255, 128, 0)); // orange
+        this.coloredPointList.add(new PointCouleur(1.2, 1, 255, 255, 0)); // yellow
+        this.coloredPointList.add(new PointCouleur(1.4, 1, 230, 230, 230)); // gray
+        this.coloredPointList.add(new PointCouleur(1.8, 1, 0, 255, 255)); // light blue
+        this.coloredPointList.add(new PointCouleur(2.6, 1, 255, 0, 255)); // violet
+        this.coloredPointList.add(new PointCouleur(4.2, 1, 0, 0, 0)); // black
+        this.coloredPointList.add(new PointCouleur(7.4, 1, 128, 128, 128)); // gray
 
         this.requestedNeighbors = 2;
 
         this.isCollidingWithRectangle = false;
+        this.movementAllowed = true;
     }
 
     public Particle(double xParam, double yParam, double rayonParam, double densiteParam, int numLigneParam, int numColonneParam) {
         this(xParam, yParam, rayonParam, numLigneParam, numColonneParam);
         // The mass is set so that the density is correct.
         this.mass = this.radius * this.radius * densiteParam;
+    }
+
+    public Particle clone() {
+        return new Particle(this.position.getX(), this.position.getY(), this.radius, this.density, this.numLine, this.numColumn);
     }
 
     public void setColor(Color c) {
@@ -134,6 +141,7 @@ public class Particle {
 
     public void setVx(double vx) {
         this.speed.setX(vx);
+//        System.out.println("particle " + this + " setting vX to " + this.speed.getX());
     }
 
     public void setVy(double vy) {
@@ -154,11 +162,13 @@ public class Particle {
 
     public double getKineticEnergy() { // Ec=(1/2)m*v2
         double v = this.speed.norme();
-        return this.mass * v * v;
+        double ke = 0.5 * this.mass * v * v;
+        return ke;
     }
 
     public double getPotentialEnergy(double g) { // Ec=m*g*y
-        return -this.mass * g * this.position.getY();
+        double pE = this.mass * g * this.position.getY();
+        return pE;
     }
 
     public int getLineNum() {
@@ -216,6 +226,7 @@ public class Particle {
     public void increaseDensity(Particle p) {
         double k = Kernel.w(this.getDistance(p), this.radius);
         this.density = this.density + p.mass * k;
+//        System.out.println("p.mass: " + p.mass);
     }
 
     public double getDensity() {
@@ -299,30 +310,6 @@ public class Particle {
         }
     }
 
-    public void displayForces(Graphics g, double x0, double y0, double zoom, int panelHeight, double k) {
-
-        // The Graphics2d is used to display bold lines.
-        Graphics2D g2 = (Graphics2D) g;
-
-        // Coordinates are expressed in the referential of the panel.
-        int xApp = (int) (this.getX() * zoom + x0);
-        int yApp = (int) (panelHeight - (this.getY() * zoom + y0));
-        int xAppEnd, yAppEnd;
-
-        double fx = this.force.getX();
-        double fy = this.force.getY();
-
-        g2.setColor(Color.red);
-        if (this.selected) {
-            g2.setStroke(new BasicStroke(3));
-        }
-        xAppEnd = (int) (xApp + k * zoom * fx);
-        yAppEnd = (int) (yApp - k * zoom * fy);
-        g2.drawLine(xApp, yApp, xAppEnd, yAppEnd);
-        // Reset the stroke to a normal (not bold) one.
-        g2.setStroke(new BasicStroke(1));
-    }
-
     public void display(Graphics g, double x0, double y0, double zoom, int panelHeight) {
 
         // Coordinates are expressed in the referential of the panel.
@@ -349,8 +336,8 @@ public class Particle {
         // g.setColor(Color.BLACK);
         // g.drawString(this.nbNeighbors + "", xApp + apparentRadius, yApp);
         // g.drawString(this.force + "", xApp + apparentRadius, yApp + apparentRadius);
-//        this.displayPreviousPositions(g, x0, y0, zoom, panelHeight);
-        // this.displayForce(g, x0, y0, zoom, panelHeight);
+        this.displayPreviousPositions(g, x0, y0, zoom, panelHeight);
+        this.displayForce(g, x0, y0, zoom, panelHeight);
     }
 
     public void displayForce(Graphics g, double x0, double y0, double zoom, int panelHeight) {
@@ -363,6 +350,30 @@ public class Particle {
         int dyApp = (int) (scale * this.force.getY());
         g.setColor(Color.ORANGE);
         g.drawLine(xApp, yApp, xApp + dxApp, yApp - dyApp);
+    }
+
+    public void displayForces(Graphics g, double x0, double y0, double zoom, int panelHeight, double k) {
+
+        // The Graphics2d is used to display bold lines.
+        Graphics2D g2 = (Graphics2D) g;
+
+        // Coordinates are expressed in the referential of the panel.
+        int xApp = (int) (this.getX() * zoom + x0);
+        int yApp = (int) (panelHeight - (this.getY() * zoom + y0));
+        int xAppEnd, yAppEnd;
+
+        double fx = this.force.getX();
+        double fy = this.force.getY();
+
+        g2.setColor(Color.red);
+        if (this.selected) {
+            g2.setStroke(new BasicStroke(3));
+        }
+        xAppEnd = (int) (xApp + k * zoom * fx);
+        yAppEnd = (int) (yApp - k * zoom * fy);
+        g2.drawLine(xApp, yApp, xAppEnd, yAppEnd);
+        // Reset the stroke to a normal (not bold) one.
+        g2.setStroke(new BasicStroke(1));
     }
 
     public void displayPreviousPositions(Graphics g, double x0, double y0, double zoom, int panelHeight) {
@@ -395,30 +406,34 @@ public class Particle {
     }
 
     /**
-     * Move the particle with respect to its current speed.
+     * Move the particle with respect to its current speed. Only a free-moving
+     * particle will actually move; a non-allowed one will not.
      */
     public void move(double dt) {
 
-        if (this.position.getX() == Double.NaN || this.position.getY() == Double.NaN) {
-            System.out.println("NaN particle");
-        }
+        if (this.isMovementAllowed()) {
+            if (this.position.getX() == Double.NaN || this.position.getY() == Double.NaN) {
+                System.out.println("NaN particle");
+            }
 
-        this.position = new Vecteur(this.position.getX() + this.speed.getX() * dt, this.position.getY() + this.speed.getY() * dt);
-        // this.dampenSpeed(0.9999);
+            this.position = new Vecteur(this.position.getX() + this.speed.getX() * dt, this.position.getY() + this.speed.getY() * dt);
+            // this.dampenSpeed(0.9999);
+//            System.out.println("particle " + this + " moving, vx = " + this + speed.getX());
 
-        // Update the list of the previous speeds.
-        this.speedList.remove(0);
-        this.speedList.add(this.speed.clone());
+            // Update the list of the previous speeds.
+            this.speedList.remove(0);
+            this.speedList.add(this.speed.clone());
 
-        // // Update the list of the previous positions.
-        if (this.nbPrevPos > 0) {
-            this.positionList.remove(0);
-            this.positionList.add(this.position.clone());
+            // // Update the list of the previous positions.
+            if (this.nbPrevPos > 0) {
+                this.positionList.remove(0);
+                this.positionList.add(this.position.clone());
+            }
         }
     }
 
     /**
-     * Arbitrarily move the speed (independently from its actual speed).
+     * Arbitrarily move the particle (independently from its actual speed).
      */
     public void move(double dx, double dy) {
         this.position = this.position.sum(new Vecteur(dx, dy));
@@ -489,6 +504,7 @@ public class Particle {
 
         Vecteur uab = p.position.diff(this.position).normer();
         double overlap = Math.max(0, (this.radius + p.radius) - p.getDistance(this));
+//        System.out.println("overlap 1: " + overlap);
 
         if (diff.estNul()) {
             // Special case, arbitrary random modification.
@@ -499,11 +515,11 @@ public class Particle {
 //            System.out.println("overlap: " + overlap);
             // RIGID COLLISIONS MODEL
             /*
-			 * The referential is constructed as follow:
-			 * Point A is the center of this sphere, point B is the center of parameter 'p';
-			 * Point O is the contact point, middle of [AB];
-			 * Unit vector uy starts at O in the direction of A;
-			 * Unit vector ux starts at O and is such that (ux, uy) has the value +Pi/4;
+             * The referential is constructed as follow:
+             * Point A is the center of this sphere, point B is the center of parameter 'p';
+             * Point O is the contact point, middle of [AB];
+             * Unit vector uy starts at O in the direction of A;
+             * Unit vector ux starts at O and is such that (ux, uy) has the value +Pi/4;
              */
             Vecteur a = this.position;
             Vecteur b = p.position;
@@ -550,37 +566,41 @@ public class Particle {
             }
         } else {
 
-            // SPH MODEL
+            // SPH-inspired MODEL
             Vecteur dF = uab.clone();
-            double value = 0;
-            // if (overlap > (this.radius + p.radius) / 2){
-            // // Contact of the spheres
-            // value = -overlap * 10;
-            // }else if (overlap > (this.radius + p.radius) / 4){
-            // // Each center touches the other sphere
-            // value = -overlap * 10;
-            // }
-            // double ratio = overlap/this.radius;
-            if (overlap > 0) {
-                value = -100 * (1 + 5 * overlap);
+            double value;
+            double threshold = (this.radius + p.radius) / 4;
+            if (overlap > threshold) {
+                value = -overlap;
+            } else if (overlap > 0) {
+                value = overlap * (-overlap / threshold);
+            } else {
+                value = 0;
             }
 
-            dF = dF.mult(value);
+            dF = dF.mult(value * 30);
             this.force = this.force.sum(dF);
             p.force = p.force.diff(dF);
         }
     }
 
     private void receiveViscosityForces(Particle p) {
-        /*
-		 * Vecteur diffV=p.v.diff(this.v); Vecteur diffPos=p.pos.diff(this.pos);
-		 *
-		 * double lapl=Kernel.laplW(diffV, this.rayon);
-		 *
-		 * Vecteur ajout=diffV.mult(lapl*this.visco*p.masse/p.densite);
-		 *
-		 * this.f=this.f.somme(ajout);
-         */
+
+        double overlap = Math.max(0, (this.radius + p.radius) - p.getDistance(this));
+//        System.out.println("overlap: " + overlap + ", rad sum: " + (this.radius + p.radius));
+        if (overlap > 0) {
+
+            // Velocity of particle 1 (this) in the referential of particle 2 (parameter):
+            Vecteur v12 = this.speed.diff(p.speed);
+            // Force applied by particle 2 on particle 1:
+
+            Vecteur dF21 = this.speed.diff(p.speed).mult(-this.viscosity);
+
+            // We apply the viscosity to both particles. TODO: need to apply it only once.
+//            System.out.println("viscosity force: " + dF21.norme());
+            this.force = this.force.sum(dF21);
+            p.force = p.force.diff(dF21);
+        }
     }
 
     /**
@@ -666,5 +686,23 @@ public class Particle {
 
     public boolean isCollidingWithRectangle() {
         return isCollidingWithRectangle;
+    }
+
+    /**
+     * Know if a particle may or may not move.
+     *
+     * @return true is the particle is allowed to move, false otherwise.
+     */
+    public boolean isMovementAllowed() {
+        return this.movementAllowed;
+    }
+
+    /**
+     * Allow (or not) a particle to move.
+     *
+     * @param allowed
+     */
+    public void setMovementAllowed(boolean allowed) {
+        this.movementAllowed = allowed;
     }
 }

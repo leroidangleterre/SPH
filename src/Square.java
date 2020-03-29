@@ -1,4 +1,3 @@
-
 import java.awt.Color;
 import java.awt.Graphics;
 import java.util.ArrayList;
@@ -29,22 +28,22 @@ public class Square {
     /* Les particules présentes dans le carreau */
     protected ArrayList<Particle> particleList;
     /*
-	 * Les particules qui sont sorties du carreau (dont les coordonnées
-	 * dépassent les limites) et qui doivent être placées sous le contrôle
-	 * de l'un des voisins.
+     * Les particules qui sont sorties du carreau (dont les coordonnées
+     * dépassent les limites) et qui doivent être placées sous le contrôle
+     * de l'un des voisins.
      */
     private ArrayList<Particle> listeTransfert;
 
     /*
-	 * Collisions entre particules: on traite chaque particule d'une part avec
-	 * les autres particules du carreau, et d'autre part avec celles des
-	 * carreaux "dépendants" (E, SE, S, SO).
+     * Collisions entre particules: on traite chaque particule d'une part avec
+     * les autres particules du carreau, et d'autre part avec celles des
+     * carreaux "dépendants" (E, SE, S, SO).
      */
     private ArrayList<Square> listeDependances;
 
     /*
-	 * Un carreau doit connaître la liste de ses voisins, notamment pour les
-	 * collisions si le carreau est un mur.
+     * Un carreau doit connaître la liste de ses voisins, notamment pour les
+     * collisions si le carreau est un mur.
      */
     private Square northNeighbor, southNeighbor, eastNeighbor, westNeighbor;
 
@@ -59,8 +58,8 @@ public class Square {
      */
     private double elasticity = 0.9;
     /*
-	 * Un carreau peut se comporter comme une source, comme un puits, ou comme
-	 * un mur.
+     * Un carreau peut se comporter comme une source, comme un puits, ou comme
+     * un mur.
      */
     private boolean isSource;
     private boolean isHole;
@@ -96,9 +95,9 @@ public class Square {
     }
 
     /*
-	 * Déclarer un nouveau voisin. Attention: ce voisin ne doit pas avoir
-	 * déjà été enregistré (sinon BOUM!); Si le paramètre vaut null, on ne
-	 * fait rien.
+     * Déclarer un nouveau voisin. Attention: ce voisin ne doit pas avoir
+     * déjà été enregistré (sinon BOUM!); Si le paramètre vaut null, on ne
+     * fait rien.
      */
     public void setDependancy(Square v) {
         if (v != null) {
@@ -113,8 +112,8 @@ public class Square {
             // System.out.println("Carreau: (" + this.numLigne + ", " + this.numColonne + "), voisin: (" + v.numLigne + ", " + v.numColonne + ");");
 
             /*
-			 * Il faut savoir dans quelle direction est le nouveau voisin (N, S,
-			 * E ou O).
+             * Il faut savoir dans quelle direction est le nouveau voisin (N, S,
+             * E ou O).
              */
             if (v.numLigne == this.numLigne && v.numColonne == this.numColonne - 1) {
                 // System.out.println("reglage voisin ouest.");
@@ -193,20 +192,20 @@ public class Square {
     }
 
     /*
-	 * public void afficher(Graphics g, double x0, double y0, double zoom, int
-	 * hauteurPanneau){ this.afficher(g, x0, y0, zoom, hauteurPanneau, true); }
+     * public void afficher(Graphics g, double x0, double y0, double zoom, int
+     * hauteurPanneau){ this.afficher(g, x0, y0, zoom, hauteurPanneau, true); }
      */
 
- /*
-	 * Paramètres: offset de position et zoom; hauteur du panneau d'affichage;
-	 * booléen qui dit si on affiche les vitesses instantanées ou moyennes des
-	 * particules. Les vitesses moyennes sont calculées sur les N étapes
-	 * précédentes.
+    /*
+     * Paramètres: offset de position et zoom; hauteur du panneau d'affichage;
+     * booléen qui dit si on affiche les vitesses instantanées ou moyennes des
+     * particules. Les vitesses moyennes sont calculées sur les N étapes
+     * précédentes.
      */
     public void displayBackground(Graphics g, double x0, double y0, double zoom, int hauteurPanneau, String vitessesInstantanees) {
         /*
-		 * On convertit les coordonnées et la taille du carreau pour les avoir
-		 * dans le repère lié au panneau.
+         * On convertit les coordonnées et la taille du carreau pour les avoir
+         * dans le repère lié au panneau.
          */
         int xApp = (int) (this.xCenter * zoom + x0);
         int yApp = (int) (hauteurPanneau - (this.yCenter * zoom + y0));
@@ -216,8 +215,8 @@ public class Square {
         g.drawRect(xApp - tailleApp / 2, yApp - tailleApp / 2, tailleApp, tailleApp);
 
         /*
-		 * Si c'est une source, on affiche un fond rouge. Si c'est un puits, on
-		 * affiche un fond noir. Si c'est un mur, on affiche un fond vert.
+         * Si c'est une source, on affiche un fond rouge. Si c'est un puits, on
+         * affiche un fond noir. Si c'est un mur, on affiche un fond vert.
          */
         if (this.isSource) {
             g.setColor(Color.red);
@@ -258,8 +257,8 @@ public class Square {
     /* Supprimer tous les éléments qui sont sélectionnés. */
     public void deleteSelection() {
         /*
-		 * NB: pour éviter d'avoir à modifier l'indice à chaque fois qu'on
-		 * supprime un élément, on parcourt la liste en sens inverse.
+         * NB: pour éviter d'avoir à modifier l'indice à chaque fois qu'on
+         * supprime un élément, on parcourt la liste en sens inverse.
          */
         for (int i = this.particleList.size() - 1; i >= 0; i--) {
             if (this.particleList.get(i).isSelected()) {
@@ -269,20 +268,27 @@ public class Square {
     }
 
     /*
-	 * Créer une nouvelle particule à un endroit spécifié. NB: il vaut mieux
-	 * être certain que la particule appartienne effectivement au carreau, mais
-	 * ce n'est pas rigoureusement obligatoire.
+     * Créer une nouvelle particule à un endroit spécifié. NB: il vaut mieux
+     * être certain que la particule appartienne effectivement au carreau, mais
+     * ce n'est pas rigoureusement obligatoire.
      */
-    public void createParticle(double x, double y) {
-        Particle p = new Particle(x, y, this.size / 4, this.numLigne, this.numColonne);
+    public void createParticle(double x, double y, double vx, double vy) {
+//        Particle p = new Particle(x, y, this.size / 8, this.numLigne, this.numColonne);
+        Particle p = new Particle(x, y, Particle.defaultRadius, this.numLigne, this.numColonne);
+        p.setVx(vx);
+        p.setVy(vy);
         this.particleList.add(p);
+    }
+
+    public void createParticle(double x, double y) {
+        createParticle(x, y, 0, 0);
     }
 
     public void createSeveralParticles(int nb) {
         double x, y;
         /*
-		* Les coordonnées des particules seront choisies au
-						 * hasard.
+         * Les coordonnées des particules seront choisies au
+         * hasard.
          */
         Random gen = new Random();
         for (int i = 0; i < nb; i++) {
@@ -292,9 +298,25 @@ public class Square {
         }
     }
 
+    public void duplicateSelection() {
+        ArrayList<Particle> duplicateParticles = new ArrayList<>();
+        for (Particle p : particleList) {
+            if (p.isSelected()) {
+                Particle newP = p.clone();
+                p.setSelected(false);
+                newP.setSelected(true);
+                duplicateParticles.add(newP);
+            }
+        }
+
+        for (Particle newP : duplicateParticles) {
+            particleList.add(newP);
+        }
+    }
+
     /*
-	 * Supprimer une particule. On supprime brutalement la première particule
-	 * de la liste.
+     * Supprimer une particule. On supprime brutalement la première particule
+     * de la liste.
      */
     private void supprimerParticule() {
         if (this.particleList.size() > 0) {
@@ -329,8 +351,8 @@ public class Square {
     public void razDensitiesAndForces() {
 
         /*
-		 * On traite toutes les particules de ce carreau, et seulement de ce
-		 * carreau.
+         * On traite toutes les particules de ce carreau, et seulement de ce
+         * carreau.
          */
         for (Particle p : this.particleList) {
             p.resetDensityAndForces();
@@ -343,8 +365,8 @@ public class Square {
 //        System.out.println("Carreau.computeDensities()");
 
         /*
-		 * Pour chaque particule du carreau, on traite toutes celles de toutes les
-		 * d�pendances.
+         * Pour chaque particule du carreau, on traite toutes celles de toutes les
+         * d�pendances.
          */
         for (Particle p0 : this.particleList) {
             for (Square voisin : this.listeDependances) {
@@ -358,9 +380,9 @@ public class Square {
         }
 
         /*
-		 * Pour chaque particule du carreau, on traite toutes celles situées
-		 * plus loin dans la liste de ce même carreau. NB: la densité d'une
-		 * particule est calculée notamment avec la particule elle-même.
+         * Pour chaque particule du carreau, on traite toutes celles situées
+         * plus loin dans la liste de ce même carreau. NB: la densité d'une
+         * particule est calculée notamment avec la particule elle-même.
          */
         for (int i = 0; i < this.particleList.size(); i++) {
             Particle p0 = this.particleList.get(i);
@@ -456,24 +478,24 @@ public class Square {
     public void processWall() {
 
         /*
-		 * Rebond des particules vers l'extérieur, en fonction notamment du
-		 * type des carreaux voisins.
+         * Rebond des particules vers l'extérieur, en fonction notamment du
+         * type des carreaux voisins.
          */
 
- /*
-		 * Déterminer dans quel quart du carreau la particule se trouve: nord,
-		 * sud, est, ouest. Chaque quart est un triangle formé par un bord du
-		 * carré et le centre.
+        /*
+         * Déterminer dans quel quart du carreau la particule se trouve: nord,
+         * sud, est, ouest. Chaque quart est un triangle formé par un bord du
+         * carré et le centre.
          */
 
- /*
-		 * TODO: trouver la case vide la plus proche (voir fichier TODO annexe).
+        /*
+         * TODO: trouver la case vide la plus proche (voir fichier TODO annexe).
          */
 
- /*
-		 * if(this.listeParticules.size() > 0){
-		 * System.out.println("Mur contient " + this.listeParticules.size() +
-		 * " particules."); }
+        /*
+         * if(this.listeParticules.size() > 0){
+         * System.out.println("Mur contient " + this.listeParticules.size() +
+         * " particules."); }
          */
 //        for (int i = 0; i < this.particleList.size(); i++) {
 //            Particle p = this.particleList.get(i);
@@ -578,26 +600,28 @@ public class Square {
         for (int i = this.particleList.size() - 1; i >= 0; i--) {
             Particle p = this.particleList.get(i);
             p.move(dt);
-            boolean transferNecessary = false;
-            if (p.getX() > this.xCenter + this.size / 2) {
-                p.setColumnNum(p.getColomnNum() + 1);
-                transferNecessary = true;
-            }
-            if (p.getX() < this.xCenter - this.size / 2) {
-                p.setColumnNum(p.getColomnNum() - 1);
-                transferNecessary = true;
-            }
-            if (p.getY() > this.yCenter + this.size / 2) {
-                p.setLineNum(p.getLineNum() - 1);
-                transferNecessary = true;
-            }
-            if (p.getY() < this.yCenter - this.size / 2) {
-                p.setLineNum(p.getLineNum() + 1);
-                transferNecessary = true;
-            }
+            if (p.isMovementAllowed()) {
+                boolean transferNecessary = false;
+                if (p.getX() > this.xCenter + this.size / 2) {
+                    p.setColumnNum(p.getColomnNum() + 1);
+                    transferNecessary = true;
+                }
+                if (p.getX() < this.xCenter - this.size / 2) {
+                    p.setColumnNum(p.getColomnNum() - 1);
+                    transferNecessary = true;
+                }
+                if (p.getY() > this.yCenter + this.size / 2) {
+                    p.setLineNum(p.getLineNum() - 1);
+                    transferNecessary = true;
+                }
+                if (p.getY() < this.yCenter - this.size / 2) {
+                    p.setLineNum(p.getLineNum() + 1);
+                    transferNecessary = true;
+                }
 
-            if (transferNecessary) {
-                list.add(this.particleList.remove(i));
+                if (transferNecessary) {
+                    list.add(this.particleList.remove(i));
+                }
             }
         }
     }
@@ -636,12 +660,12 @@ public class Square {
     }
 
     /*
-	 * public void setChoixVitesses(String affVInst){ this.affVInst=affVInst;
-	 *
-	 * for(int i=0; i<this.listeParticules.size(); i++){
-	 * this.listeParticules.get(i).setChoixVitesses(affVInst); }
-	 *
-	 * }
+     * public void setChoixVitesses(String affVInst){ this.affVInst=affVInst;
+     *
+     * for(int i=0; i<this.listeParticules.size(); i++){
+     * this.listeParticules.get(i).setChoixVitesses(affVInst); }
+     *
+     * }
      */
     /**
      * Determine whether the given point is located inside at least one selected
