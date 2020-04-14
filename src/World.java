@@ -1,3 +1,4 @@
+
 import java.awt.Color;
 import java.awt.Graphics;
 import java.util.ArrayList;
@@ -41,6 +42,8 @@ public class World {
     private double gravitySave = -80.0; //-800.0;
     private double gravity;
 
+    private boolean mustReact;
+
     // Initial values of the sources and holes at their creation.
     private double sourceOutflow;
     private double holeInflow;
@@ -64,10 +67,10 @@ public class World {
         this.nbLines = nbLines;
         this.nbColumns = nbColumns;
 
-        this.tab = new ArrayList<ArrayList<Square>>();
+        this.tab = new ArrayList<>();
         for (int i = 0; i < this.nbLines; i++) {
 
-            ArrayList<Square> line = new ArrayList<Square>();
+            ArrayList<Square> line = new ArrayList<>();
             this.tab.add(line);
 
             double yC = (this.nbLines / 2 - i) * elemSize;
@@ -111,18 +114,12 @@ public class World {
         this.rectangleBeingDrawn = false;
         this.nbCTRLPressed = 0;
         this.gravity = 0;// gravitySave;
+        this.mustReact = false;
         this.instantSpeedDisplay = "v";
         this.selectionBeingMoved = false;
         this.isRunning = false;
         this.sem = new Semaphore(1);
         this.step = 0;
-
-//        this.setWallsForTest();
-//        this.setRectanglesForTest();
-        for (int i = 0; i < 40; i++) {
-            double y = .5 * i - 9;
-            createOneParticle(0, y, 0, 0);
-        }
     }
 
     /**
@@ -132,7 +129,7 @@ public class World {
         double fact = 0.2;
         double fact4 = 0.007;
 
-        double xPrev = 0;//x0;
+        double xPrev = x0;
         double yPrev = y0;
 
         for (int i = 1; i < 5; i++) {
@@ -154,8 +151,8 @@ public class World {
 
             double elasticity = 0;
 
-            this.rectangleList.add(new Rectangle(x, y, width, height, elasticity, angle));
-            this.rectangleList.add(new Rectangle(-x, y, width, height, elasticity, -angle));
+            this.rectangleList.add(new Rectangle(x0 + x, y, width, height, elasticity, angle));
+            this.rectangleList.add(new Rectangle(x0 - x, y, width, height, elasticity, -angle));
             xPrev = xNext;
             yPrev = yNext;
         }
@@ -183,22 +180,6 @@ public class World {
         this.rectangleList.add(new Rectangle(x0 + 0.3 * scale, y0 - 0.2 * scale, 0.6 * scale, 0.2 * scale, elasticity, -angle / 2));
         this.rectangleList.add(new Rectangle(-x0 - 0.3 * scale, y0 - 0.2 * scale, 0.6 * scale, 0.2 * scale, elasticity, +angle / 2));
 
-//        // Chamber
-//        this.rectangleList.add(new Rectangle(x0, y0, scale, 0.2 * scale, elasticity));
-//        angle = Math.PI / 2;
-//        this.rectangleList.add(new Rectangle(x0 + scale / 2, y0 - scale / 2, scale, 0.2 * scale, elasticity, -angle));
-//        this.rectangleList.add(new Rectangle(-x0 - scale / 2, y0 - scale / 2, scale, 0.2 * scale, elasticity, +angle));
-        //// Bottleneck and bell
-        //        angle = 4.5 * Math.PI / 8;
-        //        this.rectangleList.add(new Rectangle(x0 + 0.4 * scale, y0 - 1.3 * scale, scale, 0.2 * scale, elasticity, -angle));
-        //        this.rectangleList.add(new Rectangle(-x0 - 0.4 * scale, y0 - 1.3 * scale, scale, 0.2 * scale, elasticity, +angle));
-        //        angle = 3.5 * Math.PI / 8;
-        //        this.rectangleList.add(new Rectangle(x0 + 0.5 * scale, y0 - 2.74 * scale, 2 * scale, 0.2 * scale, elasticity, -angle));
-        //        this.rectangleList.add(new Rectangle(-x0 - 0.5 * scale, y0 - 2.74 * scale, 2 * scale, 0.2 * scale, elasticity, +angle));
-        //// Open bell only
-        //        angle = 3.5 * Math.PI / 8;
-        //        this.rectangleList.add(new Rectangle(x0 + 0.7 * scale, y0 - 1.97 * scale, 2 * scale, 0.2 * scale, elasticity, -angle));
-        //        this.rectangleList.add(new Rectangle(-x0 - 0.7 * scale, y0 - 1.97 * scale, 2 * scale, 0.2 * scale, elasticity, +angle));
     }
 
     public void setRectanglesForTest() {
@@ -217,37 +198,12 @@ public class World {
         }
     }
 
-    /**
-     * Add walls to form a closed area, to test that particles do not cross any
-     * walls.
-     */
-    private void setWallsForTest() {
-        int iMin = this.nbLines / 2 - 3;
-        int iMax = this.nbLines / 2 + 3;
-        int jMin = this.nbColumns / 2 - 3;
-        int jMax = this.nbColumns / 2 + 3;
-
-        // Columns
-        for (int i = iMin; i <= iMax; i++) {
-            this.getSquare(i, jMin).setWall();
-            this.getSquare(i, jMax).setWall();
-        }
-        // Lines
-        for (int j = jMin; j <= jMax; j++) {
-            this.getSquare(iMin, j).setWall();
-            this.getSquare(iMax, j).setWall();
-        }
-
-        this.getSquare(nbLines / 2, nbColumns / 2).setSource(0.1);
-    }
-
     public void addSquare(Square c) {
         this.tab.get(c.getNumLine()).add(c.getNumColumn(), c);
     }
 
     // Set a given square at a given position: that replaces the previous square.
     public void setCarreau(Square sParam) {
-        System.out.println("avant ajout: taille=" + this.tab.size());
 
         // Remove any potential double.
         for (int i = this.tab.size() - 1; i >= 0; i--) {
@@ -398,8 +354,7 @@ public class World {
     /**
      * Compute one step of evolution.
      */
-    private void evoluer(double dt) {
-        long startDate = System.currentTimeMillis();
+    private synchronized void evoluer(double dt) {
         this.step++;
         try {
             sem.acquire();
@@ -499,17 +454,10 @@ public class World {
 
                 this.reinjectParticle(p, dt);
             }
-
-//            System.out.println(this.getNbParticles() + " p");
         } catch (InterruptedException ex) {
             System.out.println("World.evolve: InterruptedException");
         }
         sem.release();
-
-//        System.out.println("World evolve. Energy: \n"
-//                + "    Ke: " + this.getKineticEnergy() + "\n"
-//                + "    Pe: " + this.getPotentialEnergy(Math.abs(gravity)) + "\n"
-//                + " Total: " + (this.getKineticEnergy() + this.getPotentialEnergy(Math.abs(gravity))));
     }
 
     /**
@@ -611,12 +559,23 @@ public class World {
             if (this.rectangleBeingDrawn) {
                 this.displaySelectionRectangle(g, x0, y0, zoom, panelHeight);
             }
+
         } catch (InterruptedException ex) {
             System.out.println("Display threw an exception.");
         }
         sem.release();
-        // System.out.println(" Display released the semaphore.");
 
+    }
+
+    public void displayParticleLinks(Graphics g, double x0, double y0, double zoom, int panelHeight, int panelWidth) {
+        g.setColor(Color.yellow);
+        for (ArrayList<Square> list : tab) {
+            for (Square s : list) {
+                for (Particle p : s.particleList) {
+                    p.displayNeighbors(g, x0, y0, zoom, panelHeight);
+                }
+            }
+        }
     }
 
     /**
@@ -686,7 +645,6 @@ public class World {
     /**
      * Update the mouse position, and change content accordingly.
      *
-     * @param the new position of the mouse.
      */
     public void applyMouseMovement(double xParam, double yParam) {
 
@@ -725,7 +683,6 @@ public class World {
      * Select all particles in this world.
      */
     public void selectEverything() {
-        System.out.println("World.selectEverything()");
         for (ArrayList<Square> list : this.tab) {
             for (Square s : list) {
                 s.selectEverything();
@@ -789,7 +746,7 @@ public class World {
         if (target != null) {
             target.createParticle(x, y, vx, vy);
         } else {
-            System.out.println("square does not exist");
+            System.out.println("Error World.createOneParticle(x, y, vx, vy): square does not exist");
         }
     }
 
@@ -829,9 +786,6 @@ public class World {
                 if (this.xRelease < this.xMin) {
                     numColonneDeclic--;
                 }
-
-                System.out.println(
-                        "click at l " + numLigneClic + ", c " + numColonneClic + ", release at l " + numLigneDeclic + ", c " + numColonneDeclic);
 
                 for (int i = Math.min(numLigneClic, numLigneDeclic) + 1; i < Math.max(numLigneClic, numLigneDeclic); i++) {
                     for (int j = Math.min(numColonneClic, numColonneDeclic) + 1; j < Math.max(numColonneClic, numColonneDeclic); j++) {
@@ -1133,5 +1087,15 @@ public class World {
         }
 
         selectionBeingMoved = true;
+    }
+
+    public void toggleReaction() {
+        this.mustReact = !this.mustReact;
+        System.out.println("Reaction " + (mustReact ? "activated." : "deactivated."));
+        for (ArrayList<Square> list : tab) {
+            for (Square s : list) {
+                s.setMustReact(this.mustReact);
+            }
+        }
     }
 }

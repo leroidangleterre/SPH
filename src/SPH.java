@@ -1,4 +1,5 @@
 // Smoothed Particle Hydrodynamics tool.
+
 public class SPH {
 
     public static void main(String args[]) {
@@ -10,14 +11,11 @@ public class SPH {
         World terrain;
         IG ig;
 
-        int nbLines = 40;
-        int nbColumns = 350;
-        double squareSize = 1.0;
+        int nbLines = 30;
+        int nbColumns = 30;
+        double squareSize = 2.0;
 
         terrain = new World(nbLines, nbColumns, squareSize);
-//
-//        terrain.createOneParticle(-2.01, 0.01);
-//        terrain.createOneParticle(0.11, 0.01);
 
         ig = new IG(terrain);
 

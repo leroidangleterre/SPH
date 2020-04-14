@@ -1,3 +1,4 @@
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
@@ -41,9 +42,11 @@ public class Particle {
 
     private boolean isCollidingWithRectangle;
 
+    private ArrayList<Particle> neighborList;
+
     public Particle(double xParam, double yParam, double rayonParam, int numLigneParam, int numColonneParam) {
         this.position = new Vecteur(xParam, yParam);
-        System.out.println("New particle at (" + xParam + ", " + yParam + ";)");
+//        System.out.println("New particle at (" + xParam + ", " + yParam + ";)");
         this.speed = new Vecteur();
         this.vAvg = new Vecteur();
         this.force = new Vecteur();
@@ -71,26 +74,18 @@ public class Particle {
             this.speedList.add(new Vecteur());
         }
         this.positionList = new ArrayList<>();
-        this.nbPrevPos = 60;
+        this.nbPrevPos = 0;
         for (int i = 0; i < nbPrevPos; i++) {
             this.positionList.add(new Vecteur(this.position));
         }
         this.selected = false;
-        this.coloredPointList = new ArrayList<>();
-
-        this.coloredPointList.add(new PointCouleur(1, 1, 255, 0, 0)); // red
-        this.coloredPointList.add(new PointCouleur(1.1, 1, 255, 128, 0)); // orange
-        this.coloredPointList.add(new PointCouleur(1.2, 1, 255, 255, 0)); // yellow
-        this.coloredPointList.add(new PointCouleur(1.4, 1, 230, 230, 230)); // gray
-        this.coloredPointList.add(new PointCouleur(1.8, 1, 0, 255, 255)); // light blue
-        this.coloredPointList.add(new PointCouleur(2.6, 1, 255, 0, 255)); // violet
-        this.coloredPointList.add(new PointCouleur(4.2, 1, 0, 0, 0)); // black
-        this.coloredPointList.add(new PointCouleur(7.4, 1, 128, 128, 128)); // gray
-
+        this.setColorScale();
         this.requestedNeighbors = 2;
 
         this.isCollidingWithRectangle = false;
         this.movementAllowed = true;
+
+        this.neighborList = new ArrayList<>();
     }
 
     public Particle(double xParam, double yParam, double rayonParam, double densiteParam, int numLigneParam, int numColonneParam) {
@@ -224,9 +219,13 @@ public class Particle {
      * Take into account another particle for the computation of the density.
      */
     public void increaseDensity(Particle p) {
-        double k = Kernel.w(this.getDistance(p), this.radius);
+        double distance = this.getDistance(p);
+        double k = Kernel.w(distance, this.radius);
         this.density = this.density + p.mass * k;
 //        System.out.println("p.mass: " + p.mass);
+        if (distance < this.radius + p.radius) {
+            this.addNeighbor(p);
+        }
     }
 
     public double getDensity() {
@@ -267,6 +266,17 @@ public class Particle {
     public void resetDensityAndForces() {
         this.density = 0;
         this.force = new Vecteur();
+        this.resetNeighbors();
+    }
+
+    private void resetNeighbors() {
+        neighborList.clear();
+    }
+
+    private void addNeighbor(Particle p) {
+        if (!neighborList.contains(p)) {
+            neighborList.add(p);
+        }
     }
 
     /**
@@ -334,10 +344,24 @@ public class Particle {
         g.drawOval(xApp - apparentRadius, yApp - apparentRadius, 2 * apparentRadius, 2 * apparentRadius); // border
 
         // g.setColor(Color.BLACK);
-        // g.drawString(this.nbNeighbors + "", xApp + apparentRadius, yApp);
-        // g.drawString(this.force + "", xApp + apparentRadius, yApp + apparentRadius);
+//        g.drawString(this.nbNeighbors + "", xApp + apparentRadius, yApp);
+//        g.drawString(this.radius + "", xApp + apparentRadius, yApp + apparentRadius);
         this.displayPreviousPositions(g, x0, y0, zoom, panelHeight);
-        this.displayForce(g, x0, y0, zoom, panelHeight);
+//        this.displayForce(g, x0, y0, zoom, panelHeight);
+    }
+
+    public void displayNeighbors(Graphics g, double x0, double y0, double zoom, int panelHeight) {
+//        System.out.println("Painting " + neighborList.size() + " neighbors");
+        // Coordinates are expressed in the referential of the panel.
+        int xApp0 = (int) (this.getX() * zoom + x0);
+        int yApp0 = (int) (panelHeight - (this.getY() * zoom + y0));
+        int xApp1, yApp1;
+
+        for (Particle p : this.neighborList) {
+            xApp1 = (int) (p.getX() * zoom + x0);
+            yApp1 = (int) (panelHeight - (p.getY() * zoom + y0));
+            g.drawLine(xApp0, yApp0, xApp1, yApp1);
+        }
     }
 
     public void displayForce(Graphics g, double x0, double y0, double zoom, int panelHeight) {
@@ -578,7 +602,7 @@ public class Particle {
                 value = 0;
             }
 
-            dF = dF.mult(value * 30);
+            dF = dF.mult(value * 15);
             this.force = this.force.sum(dF);
             p.force = p.force.diff(dF);
         }
@@ -704,5 +728,57 @@ public class Particle {
      */
     public void setMovementAllowed(boolean allowed) {
         this.movementAllowed = allowed;
+    }
+
+    private void setColorScale() {
+        this.coloredPointList = new ArrayList<>();
+        if (this.radius < 0.5) {
+            this.coloredPointList.add(new PointCouleur(0, 1, 255, 0, 0));
+            this.coloredPointList.add(new PointCouleur(1, 1, 0, 0, 255));
+        } else if (this.radius < 1) {
+            this.coloredPointList.add(new PointCouleur(0, 1, 0, 255, 0));
+            this.coloredPointList.add(new PointCouleur(1, 1, 0, 128, 128));
+        } else {
+            this.coloredPointList.add(new PointCouleur(0, 1, 0, 0, 255));
+            this.coloredPointList.add(new PointCouleur(0, 1, 128, 128, 255));
+        }
+
+//        this.coloredPointList.add(new PointCouleur(1, 1, 255, 0, 0)); // red
+//        this.coloredPointList.add(new PointCouleur(1.1, 1, 255, 128, 0)); // orange
+//        this.coloredPointList.add(new PointCouleur(1.2, 1, 255, 255, 0)); // yellow
+//        this.coloredPointList.add(new PointCouleur(1.4, 1, 230, 230, 230)); // gray
+//        this.coloredPointList.add(new PointCouleur(1.8, 1, 0, 255, 255)); // light blue
+//        this.coloredPointList.add(new PointCouleur(2.6, 1, 255, 0, 255)); // violet
+//        this.coloredPointList.add(new PointCouleur(4.2, 1, 0, 0, 0)); // black
+//        this.coloredPointList.add(new PointCouleur(7.4, 1, 128, 128, 128)); // gray
+    }
+
+    /**
+     * If the other particle is of a given type (for the moment, the type is
+     * defined via the radius), then the two particles change their nature.
+     *
+     * @param p
+     */
+    public void react(Particle p) {
+        if (this.touches(p)) {
+            if (this.radius < 1 && p.radius < 1) {
+                // Both particles turn into gas with a much larger radius
+                this.radius = 1.0;
+                this.setColorScale();
+                p.radius = 1.0;
+                p.setColorScale();
+            }
+        }
+    }
+
+    /**
+     * Return true when the two particles are in contact
+     *
+     * @param p
+     * @return
+     */
+    public boolean touches(Particle p) {
+//        System.out.println("radii: " + this.radius + ", " + p.radius + ", distance: " + Math.sqrt(this.distanceAuCarre(p)));
+        return Math.sqrt(this.distanceAuCarre(p)) < this.radius + p.radius;
     }
 }

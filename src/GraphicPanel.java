@@ -64,7 +64,7 @@ public class GraphicPanel extends JPanel {
 
         this.zoom = this.zoom * factor;
 
-        System.out.println("zoom = " + zoom);
+//        System.out.println("zoom = " + zoom);
     }
 
     /**
@@ -172,5 +172,9 @@ public class GraphicPanel extends JPanel {
     public void decreaseParticleRadii() {
         System.out.println("r-");
         terrain.decreaseParticleRadii();
+    }
+
+    public void toggleReaction() {
+        terrain.toggleReaction();
     }
 }

@@ -1,3 +1,4 @@
+
 import java.awt.Color;
 import java.awt.Graphics;
 import java.util.ArrayList;
@@ -67,22 +68,26 @@ public class Square {
     private double count;
     private boolean isWall;
 
+    private double particleRadius;
+
+    private boolean mustReact;
+
     public Square(double x, double y, double taille, int numLigne, int numColonne) {
         this.xCenter = x;
         this.yCenter = y;
         this.size = taille;
         this.numLigne = numLigne;
         this.numColonne = numColonne;
-        this.particleList = new ArrayList<Particle>();
-        this.listeTransfert = new ArrayList<Particle>();
-        this.listeDependances = new ArrayList<Square>();
-        /* Couleur unique pour tous les carreaux. */
+        this.particleList = new ArrayList<>();
+        this.listeTransfert = new ArrayList<>();
+        this.listeDependances = new ArrayList<>();
         this.couleur = Color.gray;
         this.isSource = false;
         this.isHole = false;
         this.isWall = false;
 
-        // System.out.println("new Carreau(" + this.numLigne + ", " + this.numColonne + ");");
+        particleRadius = 0.5;
+        mustReact = false;
     }
 
     public Square(double x, double y, double taille, double elasticity, int numLigne, int numColonne) {
@@ -92,6 +97,16 @@ public class Square {
 
     public Square clone() {
         return new Square(this.xCenter, this.yCenter, this.size, this.numLigne, this.numColonne);
+    }
+
+    /**
+     * Set the radius of all the particles this square will produce.
+     *
+     * @param newRadius
+     */
+    public void setParticleRadius(double newRadius) {
+        this.particleRadius = newRadius;
+        System.out.println("set part radius to " + this.particleRadius);
     }
 
     /*
@@ -109,8 +124,6 @@ public class Square {
 
     public void setNeighbor(Square v) {
         if (v != null) {
-            // System.out.println("Carreau: (" + this.numLigne + ", " + this.numColonne + "), voisin: (" + v.numLigne + ", " + v.numColonne + ");");
-
             /*
              * Il faut savoir dans quelle direction est le nouveau voisin (N, S,
              * E ou O).
@@ -192,11 +205,6 @@ public class Square {
     }
 
     /*
-     * public void afficher(Graphics g, double x0, double y0, double zoom, int
-     * hauteurPanneau){ this.afficher(g, x0, y0, zoom, hauteurPanneau, true); }
-     */
-
-    /*
      * Paramètres: offset de position et zoom; hauteur du panneau d'affichage;
      * booléen qui dit si on affiche les vitesses instantanées ou moyennes des
      * particules. Les vitesses moyennes sont calculées sur les N étapes
@@ -238,13 +246,6 @@ public class Square {
         for (Particle p : this.particleList) {
             p.display(g, x0, y0, zoom, hauteurPanneau);
         }
-
-//        for (Particle p : this.particleList) {
-//            p.displaySpeed(g, x0, y0, zoom, hauteurPanneau, 1.0, vitessesInstantanees);
-//        }
-//        for (Particle p : this.particleList) {
-//            p.displayForce(g, x0, y0, zoom, hauteurPanneau);
-//        }
     }
 
     /* Définir les éléments qui doivent être sélectionnés. */
@@ -273,8 +274,7 @@ public class Square {
      * ce n'est pas rigoureusement obligatoire.
      */
     public void createParticle(double x, double y, double vx, double vy) {
-//        Particle p = new Particle(x, y, this.size / 8, this.numLigne, this.numColonne);
-        Particle p = new Particle(x, y, Particle.defaultRadius, this.numLigne, this.numColonne);
+        Particle p = new Particle(x, y, this.particleRadius, this.numLigne, this.numColonne);
         p.setVx(vx);
         p.setVy(vy);
         this.particleList.add(p);
@@ -362,8 +362,6 @@ public class Square {
 
     public void computeDensities() {
 
-//        System.out.println("Carreau.computeDensities()");
-
         /*
          * Pour chaque particule du carreau, on traite toutes celles de toutes les
          * d�pendances.
@@ -394,11 +392,6 @@ public class Square {
                 p1.increaseDensity(p0);
             }
         }
-
-        // vérif
-        // for(Particle p : this.particleList){
-        // System.out.println(p.getSerialNumber() + ": " + p.getDensity());
-        // }
     }
 
     public void computePressure() {
@@ -420,6 +413,10 @@ public class Square {
                 for (Particle p1 : voisin.particleList) {
                     p0.receiveForces(p1);
                     p1.receiveForces(p0);
+                    if (this.mustReact) {
+                        p0.react(p1);
+                        p1.react(p0);
+                    }
                 }
             }
         }
@@ -430,6 +427,10 @@ public class Square {
                 Particle p1 = this.particleList.get(j);
                 p0.receiveForces(p1);
                 p1.receiveForces(p0);
+                if (this.mustReact) {
+                    p0.react(p1);
+                    p1.react(p0);
+                }
             }
         }
     }
@@ -477,76 +478,15 @@ public class Square {
 
     public void processWall() {
 
-        /*
-         * Rebond des particules vers l'extérieur, en fonction notamment du
-         * type des carreaux voisins.
-         */
-
-        /*
-         * Déterminer dans quel quart du carreau la particule se trouve: nord,
-         * sud, est, ouest. Chaque quart est un triangle formé par un bord du
-         * carré et le centre.
-         */
-
-        /*
-         * TODO: trouver la case vide la plus proche (voir fichier TODO annexe).
-         */
-
-        /*
-         * if(this.listeParticules.size() > 0){
-         * System.out.println("Mur contient " + this.listeParticules.size() +
-         * " particules."); }
-         */
-//        for (int i = 0; i < this.particleList.size(); i++) {
-//            Particle p = this.particleList.get(i);
-//            this.processWall(p);
-//        }
     }
 
-    /**
-     * Change the movement of a particle that might collide with a wall.
-     */
-//    private void processWall(Particle p) {
-//
-//        // Coordinates of the particle in the square's reference.
-//        double x0 = p.getX() - this.xCenter;
-//        double y0 = p.getY() - this.yCenter;
-//
-//        // We need to know on which side of the square the particle is located, and whether or not it will bounce.
-//        if (x0 > y0 && x0 > -y0) {
-//            if (p.getVx() < 0 && this.eastNeighbor != null) {
-//                // Bounce on the east side.
-//                p.setX(this.xCenter + this.size / 2);
-//                p.setVx(-p.getVx() * elasticity);
-//            }
-//        } else if (y0 > x0 && y0 > -x0) {
-//            if (p.getVy() < 0 && this.northNeighbor != null) {
-//                // Bounce on the north face.
-//                p.setY(this.yCenter + this.size / 2);
-//                p.setVy(-p.getVy() * elasticity);
-//            }
-//        } else if (y0 < x0 && y0 < -x0) {
-//            if (p.getVy() > 0 && this.southNeighbor != null) {
-//                // Bounce on the south face.
-//                p.setY(this.yCenter - this.size / 2);
-//                p.setVy(-p.getVy() * elasticity);
-//            }
-//        } else if (y0 < -x0 && y0 > x0) {
-//            if (p.getVx() > 0 && this.westNeighbor != null) {
-//                // Bounce on the west face.
-//                p.setVx(-p.getVx() * elasticity);
-//                p.setX(this.xCenter - this.size / 2);
-//
-//            }
-//        }
-//    }
-    public void setSource(double n) {
-        if (n <= 0) {
+    public void setSource(double newDebit) {
+        if (newDebit <= 0) {
             this.isSource = false;
         } else {
             this.isSource = true;
             this.isHole = false;
-            this.debit = n;
+            this.debit = newDebit;
             this.count = 0;
             this.isWall = false;
         }
@@ -556,6 +496,13 @@ public class Square {
         return this.isSource;
     }
 
+    /**
+     * Set the amount of particles destroyed at each step. If n == -1, the hole
+     * destroys everything at once. If n > 0, the hole destroys that amount of
+     * particles at most, every step.
+     *
+     * @param n
+     */
     public void setHole(double n) {
         if (n == 0 || n <= -2) {
             this.isHole = false;
@@ -630,7 +577,7 @@ public class Square {
      * Remove all particles in this square.
      */
     public void empty() {
-        this.particleList = new ArrayList<Particle>(0);
+        this.particleList = new ArrayList<>(0);
     }
 
     /**
@@ -659,14 +606,6 @@ public class Square {
         return e;
     }
 
-    /*
-     * public void setChoixVitesses(String affVInst){ this.affVInst=affVInst;
-     *
-     * for(int i=0; i<this.listeParticules.size(); i++){
-     * this.listeParticules.get(i).setChoixVitesses(affVInst); }
-     *
-     * }
-     */
     /**
      * Determine whether the given point is located inside at least one selected
      * particle.
@@ -748,5 +687,9 @@ public class Square {
             p.setVx((1 - factor) * p.getVx() + factor * terminalVx);
             p.setVy((1 - factor) * p.getVy() + factor * terminalVy);
         }
+    }
+
+    public void setMustReact(boolean newMustReact) {
+        mustReact = newMustReact;
     }
 }

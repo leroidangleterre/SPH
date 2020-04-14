@@ -264,7 +264,7 @@ public class IG {
 
         @Override
         public void mouseWheelMoved(MouseWheelEvent ev) {
-            System.out.println("wheelrotation: " + ev.getPreciseWheelRotation());
+//            System.out.println("wheelrotation: " + ev.getPreciseWheelRotation());
             panel.zoom(ev.getX(), ev.getY(), ev.getPreciseWheelRotation());
             /*
              * NB: le paramètre getWheelRotation est positif si on scrolle vers
@@ -301,9 +301,7 @@ public class IG {
                     window.setTitle("SELECTION_PARTICULES");
                     break;
                 case KeyEvent.VK_R:
-                    this.panneau.setCurrentTool(Tool.RECTANGLE);
-                    System.out.println("RECTANGLE");
-                    window.setTitle("RECTANGLE");
+                    this.panneau.toggleReaction();
                     break;
                 case KeyEvent.VK_C:
                     panneau.setCurrentTool(Tool.SOURCE_SQUARE);
