@@ -21,6 +21,7 @@ public class Particle {
     private int nbPrevPos;
     private boolean selected;
     private double radius, radiusMin, radiusMax;
+    private double dRadius;
     private double viscosity = 0.1;
     private double mass, density, pressure;
     private double pressureCst, refDensity; // Pressure is computed as pressureCst * (density - refDensity);
@@ -38,34 +39,30 @@ public class Particle {
     private int requestedNeighbors; // The size of this particle must adapt to have approximately that many neighbors.
     private int nbNeighbors; // The amount of neighbors that this particle currently interacts with.
 
-    private double dRadius;
-
     private boolean isCollidingWithRectangle;
 
     private ArrayList<Particle> neighborList;
 
-    public Particle(double xParam, double yParam, double rayonParam, int numLigneParam, int numColonneParam) {
+    // Chemical reactions
+    private String type;
+    private static ReactionController reacCtrl = new ReactionController();
+
+    public Particle(double xParam, double yParam, double rayonParam, int numLigneParam, int numColonneParam, String newType) {
         this.position = new Vecteur(xParam, yParam);
-//        System.out.println("New particle at (" + xParam + ", " + yParam + ";)");
         this.speed = new Vecteur();
         this.vAvg = new Vecteur();
         this.force = new Vecteur();
-        // if (Math.random() < 0.5){
-        this.radius = rayonParam;
-        // }else{
-        // this.radius = 2 * rayonParam;
-        // }
+
+        setType(newType);
+        this.setColorScale();
+
         this.dRadius = 1.1;
         this.radiusMax = 1 * radius;
         this.radiusMin = 1 * radius;
         this.numLine = numLigneParam;
         this.numColumn = numColonneParam;
-        this.mass = 0.02;// 1.0
         this.pressureCst = 10000;
         this.refDensity = 1.0;
-        Random r = new Random();
-        this.alpha = 50;
-        this.color = new Color(r.nextInt(206) + 50, r.nextInt(206) + 50, r.nextInt(206) + 50, this.alpha);
         this.serialNumber = Particle.nbParticlesCreated;
         Particle.nbParticlesCreated++;
         this.speedList = new ArrayList<>();
@@ -86,6 +83,11 @@ public class Particle {
         this.movementAllowed = true;
 
         this.neighborList = new ArrayList<>();
+
+    }
+
+    public Particle(double xParam, double yParam, double rayonParam, int numLigneParam, int numColonneParam) {
+        this(xParam, yParam, rayonParam, numLigneParam, numColonneParam, "typeA");
     }
 
     public Particle(double xParam, double yParam, double rayonParam, double densiteParam, int numLigneParam, int numColonneParam) {
@@ -136,7 +138,6 @@ public class Particle {
 
     public void setVx(double vx) {
         this.speed.setX(vx);
-//        System.out.println("particle " + this + " setting vX to " + this.speed.getX());
     }
 
     public void setVy(double vy) {
@@ -732,16 +733,23 @@ public class Particle {
 
     private void setColorScale() {
         this.coloredPointList = new ArrayList<>();
-        if (this.radius < 0.5) {
-            this.coloredPointList.add(new PointCouleur(0, 1, 255, 0, 0));
-            this.coloredPointList.add(new PointCouleur(1, 1, 0, 0, 255));
-        } else if (this.radius < 1) {
-            this.coloredPointList.add(new PointCouleur(0, 1, 0, 255, 0));
-            this.coloredPointList.add(new PointCouleur(1, 1, 0, 128, 128));
-        } else {
-            this.coloredPointList.add(new PointCouleur(0, 1, 0, 0, 255));
-            this.coloredPointList.add(new PointCouleur(0, 1, 128, 128, 255));
+        switch (this.type) {
+            case "typeA":
+                this.coloredPointList.add(new PointCouleur(0, 1, 255, 0, 0));
+                this.coloredPointList.add(new PointCouleur(1, 1, 0, 0, 255));
+                break;
+            case "typeB":
+                this.coloredPointList.add(new PointCouleur(0, 1, 0, 255, 0));
+                this.coloredPointList.add(new PointCouleur(1, 1, 0, 128, 128));
+                break;
+            case "typeC":
+                this.coloredPointList.add(new PointCouleur(0, 1, 0, 0, 255));
+                this.coloredPointList.add(new PointCouleur(1, 1, 128, 128, 255));
+                break;
+            default:
+                this.coloredPointList.add(new PointCouleur(0, 1, 128, 128, 128));
         }
+        this.alpha = 128;
 
 //        this.coloredPointList.add(new PointCouleur(1, 1, 255, 0, 0)); // red
 //        this.coloredPointList.add(new PointCouleur(1.1, 1, 255, 128, 0)); // orange
@@ -761,13 +769,49 @@ public class Particle {
      */
     public void react(Particle p) {
         if (this.touches(p)) {
-            if (this.radius < 1 && p.radius < 1) {
-                // Both particles turn into gas with a much larger radius
-                this.radius = 1.0;
-                this.setColorScale();
-                p.radius = 1.0;
-                p.setColorScale();
-            }
+            reacCtrl.processReaction(this, p);
+//            if (this.radius < 1 && p.radius < 1) {
+//                // Both particles turn into gas with a much larger radius
+//                this.radius = 1.0;
+//                this.setColorScale();
+//                p.radius = 1.0;
+//                p.setColorScale();
+//            }
+        }
+    }
+
+    public String getType() {
+        return this.type;
+    }
+
+    public void setType(String newType) {
+        this.type = newType;
+        this.setColorScale();
+        this.setSizeFromType();
+    }
+
+    public void setSizeFromType() {
+
+        switch (type) {
+            case "typeA":
+                this.radius = 1;
+                this.mass = 0.02;
+                this.alpha = 100;
+                break;
+            case "typeB":
+                this.radius = 1;
+                this.mass = 0.02;
+                this.alpha = 100;
+                break;
+            case "typeC":
+                this.radius = 3;
+                this.mass = 0.02;
+                this.alpha = 100;
+                break;
+            default:
+                this.radius = 13;
+                this.mass = 0.05;
+                this.alpha = 50;
         }
     }
 
@@ -779,6 +823,7 @@ public class Particle {
      */
     public boolean touches(Particle p) {
 //        System.out.println("radii: " + this.radius + ", " + p.radius + ", distance: " + Math.sqrt(this.distanceAuCarre(p)));
+//        System.out.println((Math.sqrt(this.distanceAuCarre(p)) < this.radius + p.radius) + "  ");
         return Math.sqrt(this.distanceAuCarre(p)) < this.radius + p.radius;
     }
 }

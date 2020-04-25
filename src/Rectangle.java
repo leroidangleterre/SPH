@@ -9,7 +9,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.util.ArrayList;
 
-public class Rectangle{
+public class Rectangle {
 
     private double xCenter, yCenter;
     private double width, height; // width >= height
@@ -24,18 +24,22 @@ public class Rectangle{
     // The points that make the border of the rectangle.
     private ArrayList<Particle> border;
 
-    public Rectangle(double x, double y, double width, double height){
+    private boolean isSelected;
+
+    public Rectangle(double x, double y, double width, double height) {
         this.xCenter = x;
         this.yCenter = y;
         this.width = Math.max(width, height);
         this.height = Math.min(width, height);
-        if(height > width){
+        if (height > width) {
             this.setAngle(Math.PI / 2);
-        } else{
+        } else {
             this.setAngle(0);
         }
         this.elasticity = 0.00;
         this.repulsion = 0.5;
+
+        this.isSelected = false;
 
 //        // Creation of the border.
 //        this.border = new ArrayList<>();
@@ -63,27 +67,46 @@ public class Rectangle{
 //        }
     }
 
-    public Rectangle(double x, double y, double l, double h, double elasticity){
+    public Rectangle(double x, double y, double l, double h, double elasticity) {
         this(x, y, l, h);
         this.elasticity = elasticity;
     }
 
-    public Rectangle(double x, double y, double l, double h, double elasticity, double angle){
+    public Rectangle(double x, double y, double l, double h, double elasticity, double angle) {
         this(x, y, l, h, elasticity);
         this.setAngle(angle);
     }
 
-    public void rotate(double dAngle){
+    public void move(double dx, double dy) {
+        System.out.println("Moving rectangle " + this);
+        this.xCenter += dx;
+        this.yCenter += dy;
+        this.computeCoordinates();
+    }
+
+    public void rotate(double dAngle) {
         this.setAngle(angle + dAngle);
     }
 
-    public void setAngle(double angle){
+    public void setAngle(double angle) {
         this.angle = angle;
         this.computeCoordinates();
     }
 
+    public double getAngle() {
+        return this.angle;
+    }
+
+    public double getX() {
+        return this.xCenter;
+    }
+
+    public double getY() {
+        return this.yCenter;
+    }
+
     // Compute the coordinates of the rotated summits of the rectangle.
-    private void computeCoordinates(){
+    private void computeCoordinates() {
         double co = Math.cos(angle);
         double si = Math.sin(angle);
 
@@ -101,7 +124,7 @@ public class Rectangle{
         d = q.sum(m).sum(center);
     }
 
-    public void display(Graphics g, double x0, double y0, double zoom, int hauteurPanneau){
+    public void display(Graphics g, double x0, double y0, double zoom, int hauteurPanneau) {
 
         // Points of the rectangle are given in the following order:
         // Top right, top left, bottom left, botton right.
@@ -117,9 +140,10 @@ public class Rectangle{
         g.setColor(Color.gray);
 
         g.fillPolygon(tabX, tabY, 4);
+
     }
 
-    public void displayBorders(Graphics g, double x0, double y0, double zoom, int hauteurPanneau){
+    public void displayBorders(Graphics g, double x0, double y0, double zoom, int hauteurPanneau) {
 
         // Points of the rectangle are given in the following order:
         // Top right, top left, bottom left, botton right.
@@ -132,7 +156,11 @@ public class Rectangle{
             (int) (hauteurPanneau - (c.getY() * zoom + y0)),
             (int) (hauteurPanneau - (d.getY() * zoom + y0))};
 
-        g.setColor(Color.black);
+        if (this.isSelected) {
+            g.setColor(Color.red);
+        } else {
+            g.setColor(Color.black);
+        }
 
         g.drawPolygon(tabX, tabY, 4);
 
@@ -148,7 +176,7 @@ public class Rectangle{
      * @param y
      * @return
      */
-    public boolean containsPoint(double x, double y){
+    public boolean containsPoint(double x, double y) {
         return this.containsPoint(x, y, 1.0);
     }
 
@@ -162,7 +190,7 @@ public class Rectangle{
      * before testing for the point inclusion
      * @return
      */
-    public boolean containsPoint(double x, double y, double factor){
+    public boolean containsPoint(double x, double y, double factor) {
 
         // Convert the coordinates into the ref linked to the rectangle.
         double co = Math.cos(-angle);
@@ -185,7 +213,7 @@ public class Rectangle{
      * @param y
      * @return
      */
-    public boolean isCloseToPoint(double x, double y){
+    public boolean isCloseToPoint(double x, double y) {
         double factor = 1.5;
         return this.containsPoint(x, y, factor);
     }
@@ -198,77 +226,79 @@ public class Rectangle{
      *
      * @param p
      */
-    public void actOnParticle(Particle p){
+    public void actOnParticle(Particle p) {
 
-        if(false){
-            if(this.containsPoint(p.getX(), p.getY())){
-//            p.setFlagCollidingWithRectangle(true);
-//        } else {
-//            p.setFlagCollidingWithRectangle(false);
-                // Convert the coordinates of the particle into the ref linked to the rectangle.
-                double co = Math.cos(-angle);
-                double si = Math.sin(-angle);
+        System.out.println("Rectangle actOnParticle()");
 
-                double xTrans = p.getX() - xCenter;
-                double yTrans = p.getY() - yCenter;
+        if (this.containsPoint(p.getX(), p.getY())) {
+            p.setFlagCollidingWithRectangle(true);
+        } else {
+            p.setFlagCollidingWithRectangle(false);
+            // Convert the coordinates of the particle into the ref linked to the rectangle.
+            double co = Math.cos(-angle);
+            double si = Math.sin(-angle);
 
-                // Coordinates of the particle in the referential linked to the rectangle.
-                double xLoc = xTrans * co - yTrans * si;
-                double yLoc = xTrans * si + yTrans * co;
+            double xTrans = p.getX() - xCenter;
+            double yTrans = p.getY() - yCenter;
 
-                // Convert the speed into the ref linked to the rectangle.
-                double vxConv = p.getVx() * co - p.getVy() * si;
-                double vyConv = p.getVx() * si + p.getVy() * co;
+            // Coordinates of the particle in the referential linked to the rectangle.
+            double xLoc = xTrans * co - yTrans * si;
+            double yLoc = xTrans * si + yTrans * co;
 
-                if(yLoc <= xLoc + height / 2 - width / 2 && yLoc >= -xLoc - height / 2 + width / 2){
+            // Convert the speed into the ref linked to the rectangle.
+            double vxConv = p.getVx() * co - p.getVy() * si;
+            double vyConv = p.getVx() * si + p.getVy() * co;
+
+            if (yLoc <= xLoc + height / 2 - width / 2 && yLoc >= -xLoc - height / 2 + width / 2) {
 //                System.out.println("bounce east");
-                    if(vxConv < 0){
-                        // Bounce on the east face:
-                        vxConv = -vxConv;
-                    } else{
-                        // Push the particle away from the east face:
-                        vxConv += repulsion;
-                    }
-                    xLoc = width / 2;
-                } else if(yLoc <= -xLoc + height / 2 - width / 2 && yLoc >= xLoc - height / 2 + width / 2){
-//                System.out.println("bounce west");
-                    if(vxConv > 0){
-                        // Bounce on the west face:
-                        vxConv = -vxConv;
-                    } else{
-                        // Push the particle away from the west face:
-                        vxConv -= repulsion;
-                    }
-                    xLoc = -width / 2;
-                } else if(yLoc >= 0){
-//                System.out.println("bounce north");
-                    if(vyConv < 0){
-                        // Bounce on the north face:
-                        vyConv = -vyConv;
-                    } else{
-                        // Push the particle away from the north face:
-                        vyConv += repulsion;
-                    }
-                    yLoc = height / 2;
-                } else{
-//                System.out.println("bounce south");
-                    if(vyConv > 0){
-                        // Bounce on the south face:
-                        vyConv = -vyConv;
-                    } else{
-                        // Push the particle away from the south face:
-                        vyConv -= repulsion;
-                    }
-                    yLoc = -height / 2;
+                if (vxConv < 0) {
+                    // Bounce on the east face:
+                    vxConv = -vxConv;
+                } else {
+                    // Push the particle away from the east face:
+                    vxConv += repulsion;
                 }
-
-                // Convert the position and speed back into the initial referential:
-                p.setX(xLoc * co + yLoc * si + xCenter);
-                p.setY(-xLoc * si + yLoc * co + yCenter);
-                p.setVx(vxConv * co + vyConv * si);
-                p.setVy(-vxConv * si + vyConv * co);
+                xLoc = width / 2;
+            } else if (yLoc <= -xLoc + height / 2 - width / 2 && yLoc >= xLoc - height / 2 + width / 2) {
+//                System.out.println("bounce west");
+                if (vxConv > 0) {
+                    // Bounce on the west face:
+                    vxConv = -vxConv;
+                } else {
+                    // Push the particle away from the west face:
+                    vxConv -= repulsion;
+                }
+                xLoc = -width / 2;
+            } else if (yLoc >= 0) {
+//                System.out.println("bounce north");
+                if (vyConv < 0) {
+                    // Bounce on the north face:
+                    vyConv = -vyConv;
+                } else {
+                    // Push the particle away from the north face:
+                    vyConv += repulsion;
+                }
+                yLoc = height / 2;
+            } else {
+//                System.out.println("bounce south");
+                if (vyConv > 0) {
+                    // Bounce on the south face:
+                    vyConv = -vyConv;
+                } else {
+                    // Push the particle away from the south face:
+                    vyConv -= repulsion;
+                }
+                yLoc = -height / 2;
             }
-        } else if(this.isCloseToPoint(p.getX(), p.getY())){
+
+            // Convert the position and speed back into the initial referential:
+            p.setX(xLoc * co + yLoc * si + xCenter);
+            p.setY(-xLoc * si + yLoc * co + yCenter);
+            p.setVx(vxConv * co + vyConv * si);
+            p.setVy(-vxConv * si + vyConv * co);
+        }
+
+        if (this.isCloseToPoint(p.getX(), p.getY())) {
             // If the point is not inside the rectangle, it may collide with the particle border.
             System.out.println("Collision with rectangles and virtual particles: TODO.");
 
@@ -280,7 +310,23 @@ public class Rectangle{
      *
      * @return the list of particles
      */
-    public ArrayList<Particle> getParticleList(){
+    public ArrayList<Particle> getParticleList() {
         return this.border;
+    }
+
+    public boolean isSelected() {
+        return isSelected;
+    }
+
+    /**
+     * Select the particle if and only if its center is located in the specified
+     * rectangle.
+     */
+    public void select(double xG, double xD, double yB, double yH) {
+
+        this.isSelected = (this.getX() > xG && this.getX() < xD && this.getY() > yB && this.getY() < yH);
+        System.out.println("Rectangle " + this.toString()
+                + (isSelected ? "" : " not") + "selected."
+        );
     }
 }

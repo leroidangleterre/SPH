@@ -48,7 +48,7 @@ public class Square {
      */
     private Square northNeighbor, southNeighbor, eastNeighbor, westNeighbor;
 
-    private Color couleur;
+    private Color color;
 
     private double speedDamping = 1.0;
 
@@ -63,6 +63,7 @@ public class Square {
      * un mur.
      */
     private boolean isSource;
+    private String sourceType;
     private boolean isHole;
     private double debit;
     private double count;
@@ -81,8 +82,9 @@ public class Square {
         this.particleList = new ArrayList<>();
         this.listeTransfert = new ArrayList<>();
         this.listeDependances = new ArrayList<>();
-        this.couleur = Color.gray;
+        this.color = Color.gray;
         this.isSource = false;
+        this.sourceType = "none";
         this.isHole = false;
         this.isWall = false;
 
@@ -219,7 +221,7 @@ public class Square {
         int yApp = (int) (hauteurPanneau - (this.yCenter * zoom + y0));
         int tailleApp = (int) (this.size * zoom);
 
-        g.setColor(this.couleur);
+        g.setColor(this.color);
         g.drawRect(xApp - tailleApp / 2, yApp - tailleApp / 2, tailleApp, tailleApp);
 
         /*
@@ -227,7 +229,7 @@ public class Square {
          * affiche un fond noir. Si c'est un mur, on affiche un fond vert.
          */
         if (this.isSource) {
-            g.setColor(Color.red);
+            g.setColor(this.color);
             g.fillRect(xApp - tailleApp / 2, yApp - tailleApp / 2, tailleApp, tailleApp);
         } else if (this.isHole) {
             g.setColor(Color.black);
@@ -274,7 +276,11 @@ public class Square {
      * ce n'est pas rigoureusement obligatoire.
      */
     public void createParticle(double x, double y, double vx, double vy) {
-        Particle p = new Particle(x, y, this.particleRadius, this.numLigne, this.numColonne);
+        createParticle(x, y, vx, vy, this.sourceType);
+    }
+
+    public void createParticle(double x, double y, double vx, double vy, String particleType) {
+        Particle p = new Particle(x, y, this.particleRadius, this.numLigne, this.numColonne, particleType);
         p.setVx(vx);
         p.setVy(vy);
         this.particleList.add(p);
@@ -284,7 +290,7 @@ public class Square {
         createParticle(x, y, 0, 0);
     }
 
-    public void createSeveralParticles(int nb) {
+    public void createSeveralParticles(int nb, String particleType) {
         double x, y;
         /*
          * Les coordonnées des particules seront choisies au
@@ -294,7 +300,7 @@ public class Square {
         for (int i = 0; i < nb; i++) {
             x = this.xCenter + (gen.nextDouble() - 0.5) * this.size;
             y = this.yCenter + (gen.nextDouble() - 0.5) * this.size;
-            this.createParticle(x, y);
+            this.createParticle(x, y, 0, 0, particleType);
         }
     }
 
@@ -445,6 +451,10 @@ public class Square {
         for (int i = 0; i < this.particleList.size(); i++) {
             this.particleList.get(i).computeSpeed(dt, gravity);
         }
+
+        if (this.numLigne == 11 && this.numColonne >= 5 && this.numColonne <= 15) {
+            influenceMeanSpeed(30.0, 0.0);
+        }
     }
 
     public void processRectangles(ArrayList<Rectangle> list) {
@@ -462,7 +472,7 @@ public class Square {
 
         if (this.isSource) {
             this.count = this.count + this.debit;
-            this.createSeveralParticles((int) (this.count));
+            this.createSeveralParticles((int) (this.count), "");
             this.count = this.count - Math.floor(this.count);
         }
         if (this.isHole) {
@@ -489,6 +499,26 @@ public class Square {
             this.debit = newDebit;
             this.count = 0;
             this.isWall = false;
+        }
+    }
+
+    public void setSourceType(String newType) {
+
+        this.sourceType = newType;
+        if (this.isSource) {
+            switch (newType) {
+                case "typeA":
+                    this.color = Color.red;
+                    break;
+                case "typeB":
+                    this.color = Color.green;
+                    break;
+                case "typeC":
+                    this.color = Color.blue;
+                    break;
+                default:
+                    this.color = Color.gray;
+            }
         }
     }
 

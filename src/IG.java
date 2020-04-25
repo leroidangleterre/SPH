@@ -387,11 +387,11 @@ public class IG {
                     resetAndStartTimer(timerPeriod);
                     break;
                 case KeyEvent.VK_LEFT:
-                    world.rotateAllRectangles(0.1);
+                    world.rotateSelectedRectangles(0.1);
 
                     break;
                 case KeyEvent.VK_RIGHT:
-                    world.rotateAllRectangles(-0.1);
+                    world.rotateSelectedRectangles(-0.1);
                     break;
                 default:
                 /* Pas de changement. */

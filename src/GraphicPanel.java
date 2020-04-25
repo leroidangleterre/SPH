@@ -1,3 +1,4 @@
+
 import java.awt.Color;
 import java.awt.Graphics;
 import javax.swing.JPanel;
@@ -108,6 +109,14 @@ public class GraphicPanel extends JPanel {
 
     public void setCurrentTool(Tool param) {
         this.currentTool = param;
+    }
+
+    public void toggleParticleType() {
+        terrain.toggleParticleType();
+    }
+
+    public String getParticleType() {
+        return terrain.getParticleType();
     }
 
     public Tool getCurrentTool() {

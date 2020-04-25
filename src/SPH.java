@@ -11,8 +11,8 @@ public class SPH {
         World terrain;
         IG ig;
 
-        int nbLines = 30;
-        int nbColumns = 30;
+        int nbLines = 12;
+        int nbColumns = 20;
         double squareSize = 2.0;
 
         terrain = new World(nbLines, nbColumns, squareSize);

@@ -47,6 +47,7 @@ public class World {
     // Initial values of the sources and holes at their creation.
     private double sourceOutflow;
     private double holeInflow;
+    private String nextSourcesType;
 
     // Possible values: "vInst", "vMoy", "_", to display the current speed, the average speed, or nothing at all.
     private String instantSpeedDisplay;
@@ -120,6 +121,7 @@ public class World {
         this.isRunning = false;
         this.sem = new Semaphore(1);
         this.step = 0;
+        this.nextSourcesType = "typeA";
     }
 
     /**
@@ -553,6 +555,9 @@ public class World {
             }
             for (int i = 0; i < this.tab.size(); i++) {
                 for (int j = 0; j < this.tab.get(i).size(); j++) {
+//                    if (this.getSquare(i, j).getNbParticules() > 0) {
+//                        System.out.println("    World.display square " + i + " " + j);
+//                    }
                     this.getSquare(i, j).displayParticles(g, x0, y0, zoom, panelHeight, this.instantSpeedDisplay);
                 }
             }
@@ -586,6 +591,7 @@ public class World {
         this.yClick = y;
 
         if (this.clickIsInSelection(x, y)) {
+            System.out.println("Selection is being moved.");
             this.selectionBeingMoved = true;
         } else {
             this.rectangleBeingDrawn = true;
@@ -623,6 +629,9 @@ public class World {
                     case RECTANGLE:
                         this.createRectangle();
                         break;
+                    case RECTANGLE_SELECTION:
+                        this.selectRectangles();
+                        break;
                     case WALL_SQUARE:
                         this.addWalls();
                         break;
@@ -657,6 +666,12 @@ public class World {
                     Square c = this.getSquare(i, j);
                     c.moveSelectedContent(dx, dy);
                     c.cancelSpeedOfSelection();
+                }
+            }
+            for (Rectangle r : rectangleList) {
+                System.out.println("Moving selected rectangles");
+                if (r.isSelected()) {
+                    r.move(dx, dy);
                 }
             }
         }
@@ -718,6 +733,16 @@ public class World {
         }
     }
 
+    public void selectRectangles() {
+        double xG = Math.min(xClick, xRelease);
+        double xD = Math.max(xClick, xRelease);
+        double yH = Math.max(yClick, yRelease);
+        double yB = Math.min(yClick, yRelease);
+        for (Rectangle r : rectangleList) {
+            r.select(xG, xD, yB, yH);
+        }
+    }
+
     /**
      * Delete all selected elements.
      */
@@ -730,6 +755,15 @@ public class World {
                 }
 
             }
+
+            // FIXME: TODO: delete the rectangles the proper way, this is too hacky.
+            for (int i = rectangleList.size() - 1; i >= 0; i--) {
+                Rectangle r = rectangleList.get(i);
+                if (r.isSelected()) {
+                    rectangleList.remove(r);
+                }
+            }
+
             sem.release();
         } catch (InterruptedException e) {
         }
@@ -744,7 +778,7 @@ public class World {
     public void createOneParticle(double x, double y, double vx, double vy) {
         Square target = this.getSquareFromCoordinates(x, y);
         if (target != null) {
-            target.createParticle(x, y, vx, vy);
+            target.createParticle(x, y, vx, vy, nextSourcesType);
         } else {
             System.out.println("Error World.createOneParticle(x, y, vx, vy): square does not exist");
         }
@@ -756,6 +790,7 @@ public class World {
      * specified area, with the correct density.
      */
     private void createParticles() {
+        System.out.println("createParticles");
 
         try {
             sem.acquire();
@@ -763,7 +798,7 @@ public class World {
             if (this.xClick == this.xRelease && this.yClick == this.yRelease) {
                 Square target = this.getSquareFromCoordinates(this.xClick, this.yClick);
                 if (target != null) {
-                    target.createParticle(this.xClick, this.yClick);
+                    target.createParticle(this.xClick, this.yClick, 0, 0, nextSourcesType);
                 }
             } else {
                 double dyClick = this.yMax - this.yClick;
@@ -793,7 +828,7 @@ public class World {
                         Square s = this.getSquare(i, j);
                         if (s != null) {
                             int nbParticles = 1;// (int)(0.1 * this.particleDensity * (int)s.getSurface());
-                            s.createSeveralParticles(nbParticles);
+                            s.createSeveralParticles(nbParticles, nextSourcesType);
                         }
                     }
                 }
@@ -844,6 +879,7 @@ public class World {
                 if (s.isIncludedInRectangle(xG, xD, yB, yH)) {
                     if (source) {
                         s.setSource(this.sourceOutflow);
+                        s.setSourceType(nextSourcesType);
                     } else {
                         s.setHole(this.holeInflow);
                     }
@@ -1002,12 +1038,15 @@ public class World {
     }
 
     /**
-     * Determine whether or not the user clicked on a selected element.
+     * Determine whether or not the user clicked on a selected element (particle
+     * or rectangle).
      */
     private boolean clickIsInSelection(double x, double y) {
         boolean res = false;
         int i = 0;
         int j;
+
+        // Test particles
         while (res == false && i < this.tab.size()) {
             ArrayList<Square> line = this.tab.get(i);
             j = 0;
@@ -1017,6 +1056,17 @@ public class World {
             }
             i++;
         }
+
+        // Test rectangles
+        for (Rectangle rect : rectangleList) {
+            if (rect.isSelected()) {
+                if (rect.containsPoint(x, y)) {
+                    res = true;
+                    System.out.println("Click is in selected rectangle");
+                }
+            }
+        }
+
         return res;
     }
 
@@ -1056,9 +1106,11 @@ public class World {
         }
     }
 
-    public void rotateAllRectangles(double dAngle) {
+    public void rotateSelectedRectangles(double dAngle) {
         for (Rectangle r : this.rectangleList) {
-            r.rotate(dAngle);
+            if (r.isSelected()) {
+                r.rotate(dAngle);
+            }
         }
     }
 
@@ -1097,5 +1149,31 @@ public class World {
                 s.setMustReact(this.mustReact);
             }
         }
+    }
+
+    public void toggleParticleType() {
+        switch (this.nextSourcesType) {
+            case "typeA":
+                this.nextSourcesType = "typeB";
+                break;
+            case "typeB":
+                this.nextSourcesType = "typeC";
+                break;
+            case "typeC":
+                this.nextSourcesType = "typeA";
+                break;
+        }
+        // Update the squares for manual particle creation
+        for (ArrayList<Square> list : tab) {
+            for (Square s : list) {
+                if (!s.isSource()) {
+                    s.setSourceType(nextSourcesType);
+                }
+            }
+        }
+    }
+
+    public String getParticleType() {
+        return this.nextSourcesType;
     }
 }
