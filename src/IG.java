@@ -103,6 +103,7 @@ public class IG {
         int displayPeriod = 30;
         displayTimer.schedule(displayTask, 0, displayPeriod);
 
+
         this.resetAndStartTimer(timerPeriod);
     }
 
@@ -113,6 +114,7 @@ public class IG {
      */
     private void resetAndStartTimer(long newPeriod) {
         if (this.evolutionTimer != null) {
+
             this.evolutionTimer.cancel();
         }
         this.evolutionTimer = new Timer();
@@ -126,6 +128,7 @@ public class IG {
      */
     private class EvolutionTimerTask extends TimerTask {
 
+
         private World leTerrain;
         private double periode;
         private long[] tabEvolveTimes = new long[10];
@@ -133,17 +136,20 @@ public class IG {
         private int offset = 0;
 
         public EvolutionTimerTask(World leTerrain, double periode) {
+
             this.leTerrain = leTerrain;
             this.periode = periode;
         }
 
         public /* synchronized */ void run() {
+
             long dateBegin = System.currentTimeMillis();
             this.leTerrain.evoluerAuto(this.periode);
 
             double meanEvolveTime, sumEvolveTimes = 0;
             // double meanRepaintTime, sumRepaintTimes = 0;
             for (int i = 0; i < 10; i++) {
+
                 sumEvolveTimes += tabEvolveTimes[i];
                 // sumRepaintTimes += tabRepaintTimes[i];
             }
@@ -153,6 +159,7 @@ public class IG {
             // System.out.println("Evolve: " + meanEvolveTime);
             offset++;
             if (offset >= 10) {
+
                 offset = 0;
             }
             long dateEnd = System.currentTimeMillis();
@@ -170,11 +177,13 @@ public class IG {
         private GraphicPanel panneau;
 
         public MouseMotionListener(GraphicPanel p) {
+
             this.panneau = p;
         }
 
         @Override
         public void mouseMoved(MouseEvent event) {
+
             xMouse = event.getX();
             yMouse = event.getY();
             panneau.processMouseMovement(event.getX(), event.getY());
@@ -280,6 +289,7 @@ public class IG {
         private GraphicPanel panneau;
 
         public KeyBoardListener(GraphicPanel p) {
+
             this.panneau = p;
         }
 
@@ -396,6 +406,7 @@ public class IG {
                     break;
                 default:
                 /* Pas de changement. */
+
             }
         }
 
@@ -407,11 +418,13 @@ public class IG {
                     break;
                 default:
                 /* Pas de changement. */
+
             }
         }
 
         @Override
         public void keyTyped(KeyEvent e) {
+
 
         }
     }

@@ -78,6 +78,7 @@ public class Kernel {
     /* Laplacien de cette fonction. */
     public static double laplW(Vecteur v, double h) {
 
+
         double x = v.getX();
         double y = v.getY();
         double r = v.norme();
