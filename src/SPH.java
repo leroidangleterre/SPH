@@ -1,8 +1,8 @@
 // Smoothed Particle Hydrodynamics tool.
 
-public class SPH{
+public class SPH {
 
-    public static void main(String args[]){
+    public static void main(String args[]) {
 
         System.out.println("Check kernel grad...");
         System.out.println("Square: debug wall collision");
@@ -11,9 +11,9 @@ public class SPH{
         World terrain;
         IG ig;
 
-        int nbLines = 10;
-        int nbColumns = 60;
-        double squareSize = 2.0;
+        int nbLines = 15;
+        int nbColumns = 15;
+        double squareSize = 5.0;
 
         terrain = new World(nbLines, nbColumns, squareSize);
 

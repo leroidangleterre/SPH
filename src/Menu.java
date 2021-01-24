@@ -1,242 +1,266 @@
+
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
-
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
-public class Menu extends JPanel{
+public class Menu extends JPanel {
 
-	private ArrayList<JButton> buttonList; // For the automated treatment.
+    private ArrayList<JButton> buttonList; // For the automated treatment.
 
-	private JButton boutonRectangle; // Pour des
-										// rectangles
-										// mobiles
-										// indépendants des
-										// carreaux
+    private JButton boutonRectangle; // Pour des
+    // rectangles
+    // mobiles
+    // indépendants des
+    // carreaux
 
-	private JButton boutonMur; // Pour des carreaux
-								// fixes
+    private JButton boutonMur; // Pour des carreaux
+    // fixes
 
-	private JButton boutonParticulesCreation;
-	private JButton boutonParticulesSel;
+    private JButton boutonParticulesCreation;
+    private JButton boutonParticulesSel;
 
-	private JButton boutonSource;
-	// private JButton boutonDebitSource;
-	private JButton boutonPuits;
-	// private JButton boutonDebitPuits;
-	private JButton boutonCarreauVide;
-	private JButton boutonCarreauxSel;
-	private JButton boutonSwitchVitesses;
-	private JButton boutonRAZ;
-	// private JTextField debitSources;
-	// private JTextField debitPuits;
-	private JButton boutonRayonPlus;
-	private JButton boutonRayonMoins;
+    private JButton boutonSelRectangles;
 
-	/* Le panneau sur lequel le menu a une influence. */
-	private GraphicPanel lePanneau;
+    private JButton boutonSource;
+    // private JButton boutonDebitSource;
+    private JButton boutonPuits;
+    // private JButton boutonDebitPuits;
+    private JButton boutonCarreauVide;
+    private JButton boutonCarreauxSel;
+    private JButton boutonSwitchVitesses;
+    private JButton boutonRAZ;
+    // private JTextField debitSources;
+    // private JTextField debitPuits;
+    private JButton boutonRayonPlus;
+    private JButton boutonRayonMoins;
 
-	public Menu(GraphicPanel panneau){
-		super();
+    private JButton boutonOneStep;
 
-		// System.out.println("new Menu");
+    private JButton boutonRessourcesPlus;
+    private JButton boutonRessourcesMoins;
 
-		this.lePanneau = panneau;
+    /* Le panneau sur lequel le menu a une influence. */
+    private GraphicPanel lePanneau;
 
-		this.boutonRectangle = new JButton("Rectangle");
+    // period of the simulation
+    double simulationPeriod;
 
-		this.boutonMur = new JButton("Mur");
+    public Menu(GraphicPanel panneau, double worldPeriod) {
+        super();
 
-		this.boutonParticulesCreation = new JButton("create P.");
-		this.boutonParticulesSel = new JButton("Select. P.");
+        // System.out.println("new Menu");
+        this.lePanneau = panneau;
 
-		this.boutonSource = new JButton("Source");
-		// this.boutonDebitSource = new JButton("debit S=1.0");
-		this.lePanneau.setSourceOutflow(0.05);
+        this.boutonRectangle = new JButton("Rectangle");
+        this.boutonSelRectangles = new JButton("Select Rectangles");
 
-		this.boutonPuits = new JButton("Puits");
-		// this.boutonDebitPuits = new JButton("debit P=1.0");
-		this.lePanneau.setHoleInflow(1.0);
+        this.boutonMur = new JButton("Mur");
 
-		this.boutonCarreauVide = new JButton("Vide");
+        this.boutonParticulesCreation = new JButton("create P.");
+        this.boutonParticulesSel = new JButton("Select. P.");
 
-		this.boutonCarreauxSel = new JButton("Sel. C");
+        this.boutonSource = new JButton("Source type A");
+        // this.boutonDebitSource = new JButton("debit S=1.0");
+        this.lePanneau.setSourceOutflow(0.05);
 
-		this.boutonSwitchVitesses = new JButton("vInst");
+        this.boutonPuits = new JButton("Puits");
+        // this.boutonDebitPuits = new JButton("debit P=1.0");
+        this.lePanneau.setHoleInflow(0.1);
 
-		this.boutonRAZ = new JButton("RAZ");
+        this.boutonCarreauVide = new JButton("Vide");
 
-		this.boutonRayonPlus = new JButton("rad+");
-		this.boutonRayonMoins = new JButton("rad-");
-		// this.sourceFlow = new TitledTextField("Source flow");
+        this.boutonCarreauxSel = new JButton("Sel. C");
 
-		this.setLayout(new GridLayout(3, 5));
+        this.boutonSwitchVitesses = new JButton("vInst");
 
-		this.add(this.boutonRectangle);
-		this.add(this.boutonMur);
-		this.add(this.boutonParticulesCreation);
-		this.add(this.boutonParticulesSel);
-		this.add(this.boutonSource);
-		// this.add(this.boutonDebitSource);
-		this.add(this.boutonPuits);
-		// this.add(this.boutonDebitPuits);
-		this.add(this.boutonCarreauVide);
-		this.add(this.boutonCarreauxSel);
-		this.add(this.boutonSwitchVitesses);
-		this.add(this.boutonRAZ);
-		// this.add(this.debitSources);
-		// this.add(this.debitPuits);
-		this.add(this.boutonRayonPlus);
-		this.add(this.boutonRayonMoins);
+        this.boutonRAZ = new JButton("RAZ");
 
-		this.buttonList = new ArrayList<JButton>();
-		this.buttonList.add(this.boutonCarreauVide);
-		this.buttonList.add(this.boutonCarreauxSel);
-		this.buttonList.add(this.boutonMur);
-		this.buttonList.add(this.boutonParticulesCreation);
-		this.buttonList.add(this.boutonParticulesSel);
-		this.buttonList.add(this.boutonPuits);
-		this.buttonList.add(this.boutonRayonMoins);
-		this.buttonList.add(this.boutonRayonPlus);
-		this.buttonList.add(this.boutonRAZ);
-		this.buttonList.add(this.boutonRectangle);
-		this.buttonList.add(this.boutonSource);
-		this.buttonList.add(this.boutonSwitchVitesses);
-		this.reglerTailleTousBoutons();
+        this.boutonRayonPlus = new JButton("rad+");
+        this.boutonRayonMoins = new JButton("rad-");
+        // this.sourceFlow = new TitledTextField("Source flow");
 
-		this.boutonRectangle.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				// lePanneau.setOutilEnCours(Outil.CARREAU_RECTANGLE);
-				lePanneau.setCurrentTool(Tool.RECTANGLE);
-			}
-		});
+        this.boutonOneStep = new JButton("Step");
+        this.simulationPeriod = worldPeriod;
 
-		this.boutonMur.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				lePanneau.setCurrentTool(Tool.WALL_SQUARE);
-			}
-		});
+        this.boutonRessourcesPlus = new JButton("Food+");
+        this.boutonRessourcesMoins = new JButton("Food-");
 
-		this.boutonParticulesCreation.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				lePanneau.setCurrentTool(Tool.PARTICLE_CREATION);
-			}
-		});
-		this.boutonParticulesSel.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				lePanneau.setCurrentTool(Tool.PARTICLE_SELECTION);
-			}
-		});
-		this.boutonSource.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				lePanneau.setCurrentTool(Tool.SOURCE_SQUARE);
-			}
-		});
+        this.setLayout(new GridLayout(2, 8));
 
-		this.boutonPuits.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				System.out.println("Select puits.");
-				lePanneau.setCurrentTool(Tool.HOLE_SQUARE);
-			}
-		});
+        this.add(this.boutonRectangle);
+        this.add(this.boutonSelRectangles);
+        this.add(this.boutonMur);
+        this.add(this.boutonParticulesCreation);
+        this.add(this.boutonParticulesSel);
+        this.add(this.boutonSource);
+        // this.add(this.boutonDebitSource);
+        this.add(this.boutonPuits);
+        // this.add(this.boutonDebitPuits);
+        this.add(this.boutonCarreauVide);
+        this.add(this.boutonCarreauxSel);
+        this.add(this.boutonSwitchVitesses);
+        this.add(this.boutonRAZ);
+        // this.add(this.debitSources);
+        // this.add(this.debitPuits);
+        this.add(this.boutonRayonPlus);
+        this.add(this.boutonRayonMoins);
+        this.add(this.boutonOneStep);
+        this.add(this.boutonRessourcesPlus);
+        this.add(this.boutonRessourcesMoins);
 
-		this.boutonCarreauVide.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				lePanneau.setCurrentTool(Tool.EMPTY_SQUARE);
-			}
-		});
-		this.boutonCarreauxSel.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				lePanneau.setCurrentTool(Tool.SELECTION_CARREAUX);
-			}
-		});
-		this.boutonSwitchVitesses.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				/*
-				 * Affichage des vitesses: on alterne entre vitesse instantanée
-				 * et vitesse moyenne.
-				 */
-				if (boutonSwitchVitesses.getText() == "vInst"){
-					boutonSwitchVitesses.setText("vMoy");
-				}else if (boutonSwitchVitesses.getText() == "vMoy"){
-					boutonSwitchVitesses.setText("v");
-				}else{
-					boutonSwitchVitesses.setText("vInst");
-				}
-				lePanneau.setSpeedDisplay(boutonSwitchVitesses.getText());
-			}
-		});
-		this.boutonRAZ.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				System.out.println("RAZ: TODO (avec demande de confirmation)");
-			}
-		});
-		this.boutonRayonPlus.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				lePanneau.increaseParticleRadii();
-			}
-		});
-		this.boutonRayonMoins.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				lePanneau.decreaseParticleRadii();
-			}
-		});
+        this.buttonList = new ArrayList<JButton>();
+        this.buttonList.add(this.boutonCarreauVide);
+        this.buttonList.add(this.boutonCarreauxSel);
+        this.buttonList.add(this.boutonMur);
+        this.buttonList.add(this.boutonParticulesCreation);
+        this.buttonList.add(this.boutonParticulesSel);
+        this.buttonList.add(this.boutonPuits);
+        this.buttonList.add(this.boutonRayonMoins);
+        this.buttonList.add(this.boutonRayonPlus);
+        this.buttonList.add(this.boutonRAZ);
+        this.buttonList.add(this.boutonRectangle);
+        this.buttonList.add(this.boutonSelRectangles);
+        this.buttonList.add(this.boutonSource);
+        this.buttonList.add(this.boutonSwitchVitesses);
+        this.buttonList.add(this.boutonOneStep);
+        this.buttonList.add(this.boutonRessourcesMoins);
+        this.buttonList.add(this.boutonRessourcesPlus);
+        this.reglerTailleTousBoutons();
 
-	}
+        this.boutonRectangle.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                // lePanneau.setOutilEnCours(Outil.CARREAU_RECTANGLE);
+                lePanneau.setCurrentTool(Tool.RECTANGLE);
+            }
+        });
 
-	private void reglerTailleTousBoutons(){
-		int largeur = 100;
-		int hauteur = 50;
-		Dimension dim = new Dimension(largeur, hauteur);
+        this.boutonSelRectangles.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                // lePanneau.setOutilEnCours(Outil.CARREAU_RECTANGLE);
+                lePanneau.setCurrentTool(Tool.RECTANGLE_SELECTION);
+            }
+        });
 
-		for(JButton b : this.buttonList){
-			this.reglerTailleUnBouton(b, dim);
-		}
-		// this.reglerTailleUnBouton(this.boutonRectangle, dim);
-		// this.reglerTailleUnBouton(this.boutonMur, dim);
-		// this.reglerTailleUnBouton(this.boutonParticulesCreation, dim);
-		// this.reglerTailleUnBouton(this.boutonParticulesSel, dim);
-		// this.reglerTailleUnBouton(this.boutonSource, dim);
-		// // this.reglerTailleUnBouton(this.boutonDebitSource, dim);
-		// this.reglerTailleUnBouton(this.boutonPuits, dim);
-		// // this.reglerTailleUnBouton(this.boutonDebitPuits, dim);
-		// this.reglerTailleUnBouton(this.boutonCarreauVide, dim);
-		// this.reglerTailleUnBouton(this.boutonCarreauxSel, dim);
-		// this.reglerTailleUnBouton(this.boutonSwitchVitesses, dim);
-		// this.reglerTailleUnBouton(this.boutonRAZ, dim);
+        this.boutonMur.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                lePanneau.setCurrentTool(Tool.WALL_SQUARE);
+            }
+        });
 
-		// this.debitSources.setSize(dim);
-		// this.debitPuits.setSize(dim);
-		// this.debitSources.setPreferredSize(dim);
-		// this.debitPuits.setPreferredSize(dim);
-	}
+        this.boutonParticulesCreation.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                lePanneau.setCurrentTool(Tool.PARTICLE_CREATION);
+            }
+        });
+        this.boutonParticulesSel.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                lePanneau.setCurrentTool(Tool.PARTICLE_SELECTION);
+            }
+        });
+        this.boutonSource.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                lePanneau.setCurrentTool(Tool.SOURCE_SQUARE);
+                lePanneau.toggleParticleType();
+                boutonSource.setText("Source " + lePanneau.getParticleType());
+            }
+        });
 
-	private void reglerTailleUnBouton(JButton bouton, Dimension dim){
-		bouton.setMaximumSize(dim);
-		bouton.setMinimumSize(dim);
-		bouton.setPreferredSize(dim);
-	}
+        this.boutonPuits.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("Select puits.");
+                lePanneau.setCurrentTool(Tool.HOLE_SQUARE);
+            }
+        });
 
-	public void addKeyListener(KeyListener k){
+        this.boutonCarreauVide.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                lePanneau.setCurrentTool(Tool.EMPTY_SQUARE);
+            }
+        });
+        this.boutonCarreauxSel.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                lePanneau.setCurrentTool(Tool.SELECTION_CARREAUX);
+            }
+        });
+        this.boutonSwitchVitesses.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                /*
+                 * Affichage des vitesses: on alterne entre vitesse instantanée
+                 * et vitesse moyenne.
+                 */
+                if (boutonSwitchVitesses.getText() == "vInst") {
+                    boutonSwitchVitesses.setText("vMoy");
+                } else if (boutonSwitchVitesses.getText() == "vMoy") {
+                    boutonSwitchVitesses.setText("v");
+                } else {
+                    boutonSwitchVitesses.setText("vInst");
+                }
+                lePanneau.setSpeedDisplay(boutonSwitchVitesses.getText());
+            }
+        });
+        this.boutonRAZ.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("RAZ: TODO (avec demande de confirmation)");
+            }
+        });
+        this.boutonRayonPlus.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                lePanneau.increaseParticleRadii();
+            }
+        });
+        this.boutonRayonMoins.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                lePanneau.decreaseParticleRadii();
+            }
+        });
+        this.boutonOneStep.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                lePanneau.getTerrain().evoluer(simulationPeriod);
+            }
+        }
+        );
+        this.boutonRessourcesPlus.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                lePanneau.getTerrain().increaseResources(true);
+                lePanneau.repaint();
+            }
+        }
+        );
+        this.boutonRessourcesMoins.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                lePanneau.getTerrain().increaseResources(false);
+                lePanneau.repaint();
+            }
+        }
+        );
 
-		for(JButton b : this.buttonList){
-			b.addKeyListener(k);
-		}
-		// this.boutonRectangle.addKeyListener(k);
-		// this.boutonMur.addKeyListener(k);
-		// this.boutonParticulesCreation.addKeyListener(k);
-		// this.boutonParticulesSel.addKeyListener(k);
-		// this.boutonSource.addKeyListener(k);
-		// // this.boutonDebitSource.addKeyListener(k);
-		// this.boutonPuits.addKeyListener(k);
-		// // this.boutonDebitPuits.addKeyListener(k);
-		// this.boutonCarreauVide.addKeyListener(k);
-		// this.boutonCarreauxSel.addKeyListener(k);
-		// this.boutonSwitchVitesses.addKeyListener(k);
-		// this.boutonRAZ.addKeyListener(k);
-	}
+    }
+
+    private void reglerTailleTousBoutons() {
+        int largeur = 100;
+        int hauteur = 50;
+        Dimension dim = new Dimension(largeur, hauteur);
+
+        for (JButton b : this.buttonList) {
+            this.reglerTailleUnBouton(b, dim);
+        }
+    }
+
+    private void reglerTailleUnBouton(JButton bouton, Dimension dim) {
+        bouton.setMaximumSize(dim);
+        bouton.setMinimumSize(dim);
+        bouton.setPreferredSize(dim);
+    }
+
+    public void addKeyListener(KeyListener k) {
+
+        for (JButton b : this.buttonList) {
+            b.addKeyListener(k);
+        }
+    }
 }

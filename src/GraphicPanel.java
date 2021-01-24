@@ -1,141 +1,189 @@
+
 import java.awt.Color;
 import java.awt.Graphics;
-
 import javax.swing.JPanel;
 
-public class GraphicPanel extends JPanel{
+public class GraphicPanel extends JPanel {
 
-	private World terrain;
+    private World terrain;
 
-	private double x0, y0, zoom;
+    private double x0, y0, zoom;
 
-	private Tool currentTool;
+    private Tool currentTool;
 
-	public GraphicPanel(World t){
-		this.terrain = t;
-		this.x0 = 814;
-		this.y0 = 564;
-		this.zoom = 60;
-	}
+    private boolean isDuplicating;
 
-	public void paintComponent(Graphics g){
-		g.setColor(Color.white);
-		g.fillRect(0, 0, this.getWidth(), this.getHeight());
-		this.terrain.display(g, this.x0, this.y0, this.zoom, this.getHeight(), this.getWidth());
-	}
+    public GraphicPanel(World t) {
+        this.terrain = t;
+        this.x0 = 616.152519;
+        this.y0 = 326.769849;
+        this.zoom = 17.489468;
+        isDuplicating = false;
+    }
 
-	public void translateHorizontally(double dx){
-		this.x0 = this.x0 + dx;
-		System.out.println("x0 = " + x0);
-	}
+    public void paintComponent(Graphics g) {
 
-	public void translateVertically(double dy){
-		this.y0 = this.y0 + dy;
-		System.out.println("y0 = " + y0);
-	}
+        long startDate = System.currentTimeMillis();
+        g.setColor(Color.white);
+        g.fillRect(0, 0, this.getWidth(), this.getHeight());
+        this.terrain.display(g, this.x0, this.y0, this.zoom, this.getHeight(), this.getWidth());
+        long endDate = System.currentTimeMillis();
+//        System.out.println("repaint time: " + (double) (endDate - startDate) / 1000);
+    }
 
-	public void zoom(int xc, int yc, int rotation){
+    public void translateHorizontally(double dx) {
+        this.x0 = this.x0 + dx;
+//        System.out.println("x0 = " + x0);
+    }
 
-		double factor;
-		if (rotation > 0){
-			/* Zoom out. */
-			factor = 1 / 1.1;
-		}else{
-			/* Zoom in. */
-			factor = 1.1;
-		}
+    public void translateVertically(double dy) {
+        this.y0 = this.y0 + dy;
+//        System.out.println("y0 = " + y0);
+    }
 
-		this.x0 = (this.x0 - (float)xc) * factor + (float)xc;
-		this.y0 = (this.y0 - (float)(this.getHeight() - yc)) * factor + (float)(this.getHeight() - yc);
+    /**
+     * Apply a zoom in or zoom out centered on a given point.
+     *
+     * @param xc x-coordinate of the center of the transformation (the point
+     * that does not move)
+     * @param yc y-coordinate of the center of the transformation
+     * @param scrollAmount if positive, zoom out; if negative, zoom in
+     */
+    public void zoom(int xc, int yc, double scrollAmount) {
 
-		this.zoom = this.zoom * factor;
+        double factor;
+        if (scrollAmount > 0) {
+            /* Zoom out. */
+            factor = 1 / 1.1;
+        } else {
+            /* Zoom in. */
+            factor = 1.1;
+        }
 
-		System.out.println("zoom = " + zoom);
-	}
+        this.x0 = (this.x0 - (float) xc) * factor + (float) xc;
+        this.y0 = (this.y0 - (float) (this.getHeight() - yc)) * factor + (float) (this.getHeight() - yc);
 
-	/** Action done when a left click occurs. Usually place or move stuff. */
-	public void gestionClicGauche(double xClic, double yClic){
+        this.zoom = this.zoom * factor;
 
-		this.terrain.leftClickAction((xClic - this.x0) / this.zoom, (this.getHeight() - yClic - this.y0) / this.zoom);
-	}
+//        System.out.println("zoom = " + zoom);
+    }
 
-	/** Action done when a right click occurs. Usually start panning view. */
-	public void gestionClicDroit(double xClic, double yClic){
+    /**
+     * Action done when a left click occurs. Usually place or move stuff.
+     */
+    public void gestionClicGauche(double xClic, double yClic) {
 
-		// this.terrain.rightClickAction((xClic - this.x0) / this.zoom, (this.getHeight() - yClic - this.y0) / this.zoom);
-	}
+        this.terrain.leftClickAction((xClic - this.x0) / this.zoom, (this.getHeight() - yClic - this.y0) / this.zoom);
+    }
 
-	/** Action done when the left button is release. */
-	public void gestionDeclicGauche(double xClic, double yClic){
-		this.terrain.leftReleaseAction((xClic - this.x0) / this.zoom, (this.getHeight() - yClic - this.y0) / this.zoom, this.currentTool);
-	}
+    /**
+     * Action done when a right click occurs. Usually start panning view.
+     */
+    public void gestionClicDroit(double xClic, double yClic) {
 
-	/** Action done when the mouse moves. */
-	public void processMouseMovement(double xClic, double yClic){
-		this.terrain.applyMouseMovement((xClic - this.x0) / this.zoom, (this.getHeight() - yClic - this.y0) / this.zoom);
-	}
+        // this.terrain.rightClickAction((xClic - this.x0) / this.zoom, (this.getHeight() - yClic - this.y0) / this.zoom);
+    }
 
-	public void setCurrentTool(Tool param){
-		this.currentTool = param;
-	}
+    /**
+     * Action done when the left button is release.
+     */
+    public void gestionDeclicGauche(double xClic, double yClic) {
 
-	public Tool getCurrentTool(){
-		return this.currentTool;
-	}
+        if (isDuplicating) {
+            isDuplicating = false;
+            this.terrain.leftReleaseAction((xClic - this.x0) / this.zoom, (this.getHeight() - yClic - this.y0) / this.zoom, null);
+        }
+        this.terrain.leftReleaseAction((xClic - this.x0) / this.zoom, (this.getHeight() - yClic - this.y0) / this.zoom, this.currentTool);
+    }
 
-	/** Automatically set the zoom and scroll to display all the terrain. */
-	public void zoomAuto(){
+    public void setDuplicating(boolean b) {
+        this.isDuplicating = b;
+    }
 
-		double ratio_ecran = (double)this.getHeight() / (double)this.getWidth();
-		double ratio_terrain = this.terrain.getRatio();
+    /**
+     * Action done when the mouse moves.
+     */
+    public void processMouseMovement(double xClic, double yClic) {
+        this.terrain.applyMouseMovement((xClic - this.x0) / this.zoom, (this.getHeight() - yClic - this.y0) / this.zoom);
+    }
 
-		if (ratio_ecran < ratio_terrain){
-			// The screen is wider that the terrain: the terrain is displayed with spare room on the sides.
-			this.zoom = this.getHeight() / this.terrain.getHeight();
-		}else{
-			// The screen is wider that the terrain: the terrain is displayed with spare room on the top and bottom.
-			this.zoom = this.getWidth() / this.terrain.getWidth();
-		}
+    public void setCurrentTool(Tool param) {
+        this.currentTool = param;
+    }
 
-		this.x0 = (this.getWidth() / 2) - ((this.terrain.getXMax() + this.terrain.getXMin()) / 2) * this.zoom;
-		this.y0 = (this.getHeight() / 2) - ((this.terrain.getYMin() + this.terrain.getYMax()) / 2) * this.zoom;
+    public void toggleParticleType() {
+        terrain.toggleParticleType();
+    }
 
-		this.repaint();
-	}
+    public String getParticleType() {
+        return terrain.getParticleType();
+    }
 
-	public void setSourceOutflow(double outflow){
-		this.terrain.setSourceOutflow(outflow);
-	}
+    public Tool getCurrentTool() {
+        return this.currentTool;
+    }
 
-	public double getSourceOutflow(){
-		return this.terrain.getSourceOutflow();
-	}
+    /**
+     * Automatically set the zoom and scroll to display all the terrain.
+     */
+    public void zoomAuto() {
 
-	public void setHoleInflow(double inflow){
-		this.terrain.setHoleInflow(inflow);
-	}
+        double ratio_ecran = (double) this.getHeight() / (double) this.getWidth();
+        double ratio_terrain = this.terrain.getRatio();
 
-	public double getHoleInflow(){
-		return this.terrain.getHoleInflow();
-	}
+        if (ratio_ecran < ratio_terrain) {
+            // The screen is wider that the terrain: the terrain is displayed with spare room on the sides.
+            this.zoom = this.getHeight() / this.terrain.getHeight();
+        } else {
+            // The screen is wider that the terrain: the terrain is displayed with spare room on the top and bottom.
+            this.zoom = this.getWidth() / this.terrain.getWidth();
+        }
 
-	/** Set the speed display. */
-	public void setSpeedDisplay(String vInst){
-		this.terrain.changerChoixVitesses(vInst);
-		this.repaint();
-	}
+        this.x0 = (this.getWidth() / 2) - ((this.terrain.getXMax() + this.terrain.getXMin()) / 2) * this.zoom;
+        this.y0 = (this.getHeight() / 2) - ((this.terrain.getYMin() + this.terrain.getYMax()) / 2) * this.zoom;
 
-	public World getTerrain(){
-		return this.terrain;
-	}
+        this.repaint();
+    }
 
-	public void increaseParticleRadii(){
-		System.out.println("r+");
-		terrain.increaseParticleRadii();
-	}
+    public void setSourceOutflow(double outflow) {
+        this.terrain.setSourceOutflow(outflow);
+    }
 
-	public void decreaseParticleRadii(){
-		System.out.println("r-");
-		terrain.decreaseParticleRadii();
-	}
+    public double getSourceOutflow() {
+        return this.terrain.getSourceOutflow();
+    }
+
+    public void setHoleInflow(double inflow) {
+        this.terrain.setHoleInflow(inflow);
+    }
+
+    public double getHoleInflow() {
+        return this.terrain.getHoleInflow();
+    }
+
+    /**
+     * Set the speed display.
+     */
+    public void setSpeedDisplay(String vInst) {
+        this.terrain.changerChoixVitesses(vInst);
+        this.repaint();
+    }
+
+    public World getTerrain() {
+        return this.terrain;
+    }
+
+    public void increaseParticleRadii() {
+        System.out.println("r+");
+        terrain.increaseParticleRadii();
+    }
+
+    public void decreaseParticleRadii() {
+        System.out.println("r-");
+        terrain.decreaseParticleRadii();
+    }
+
+    public void toggleReaction() {
+        terrain.toggleReaction();
+    }
 }
