@@ -228,11 +228,11 @@ public class Rectangle {
      */
     public void actOnParticle(Particle p) {
 
-        System.out.println("Rectangle actOnParticle()");
-
+//        System.out.println("Rectangle actOnParticle()");
         if (this.containsPoint(p.getX(), p.getY())) {
-            p.setFlagCollidingWithRectangle(true);
-        } else {
+//            p.setFlagCollidingWithRectangle(true);
+//        } else if (isCloseToPoint(p.getX(), p.getY())) {
+
             p.setFlagCollidingWithRectangle(false);
             // Convert the coordinates of the particle into the ref linked to the rectangle.
             double co = Math.cos(-angle);
@@ -296,12 +296,6 @@ public class Rectangle {
             p.setY(-xLoc * si + yLoc * co + yCenter);
             p.setVx(vxConv * co + vyConv * si);
             p.setVy(-vxConv * si + vyConv * co);
-        }
-
-        if (this.isCloseToPoint(p.getX(), p.getY())) {
-            // If the point is not inside the rectangle, it may collide with the particle border.
-            System.out.println("Collision with rectangles and virtual particles: TODO.");
-
         }
     }
 

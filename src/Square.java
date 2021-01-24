@@ -1,4 +1,5 @@
 
+import colorramp.ColorRamp;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.util.ArrayList;
@@ -28,6 +29,16 @@ public class Square {
 
     /* Les particules présentes dans le carreau */
     protected ArrayList<Particle> particleList;
+
+    protected ArrayList<Food> foodList;
+
+    /**
+     * The combined mass of all the particles contained in this square.
+     */
+    protected double mass;
+
+    private ColorRamp ramp;
+
     /*
      * Les particules qui sont sorties du carreau (dont les coordonnées
      * dépassent les limites) et qui doivent être placées sous le contrôle
@@ -49,6 +60,7 @@ public class Square {
     private Square northNeighbor, southNeighbor, eastNeighbor, westNeighbor;
 
     private Color color;
+    private static Color defaultColor = Color.gray;
 
     private double speedDamping = 1.0;
 
@@ -82,7 +94,8 @@ public class Square {
         this.particleList = new ArrayList<>();
         this.listeTransfert = new ArrayList<>();
         this.listeDependances = new ArrayList<>();
-        this.color = Color.gray;
+        this.foodList = new ArrayList<>();
+        this.color = defaultColor;
         this.isSource = false;
         this.sourceType = "none";
         this.isHole = false;
@@ -90,6 +103,12 @@ public class Square {
 
         particleRadius = 0.5;
         mustReact = false;
+        mass = 0;
+        ramp = new ColorRamp();
+        ramp.addValue(0, Color.white);
+        ramp.addValue(0.1, Color.blue);
+        ramp.addValue(0.3, Color.red);
+        ramp.addValue(1, Color.black);
     }
 
     public Square(double x, double y, double taille, double elasticity, int numLigne, int numColonne) {
@@ -221,8 +240,10 @@ public class Square {
         int yApp = (int) (hauteurPanneau - (this.yCenter * zoom + y0));
         int tailleApp = (int) (this.size * zoom);
 
-        g.setColor(this.color);
+        g.setColor(Color.gray.brighter());
         g.drawRect(xApp - tailleApp / 2, yApp - tailleApp / 2, tailleApp, tailleApp);
+//        g.setColor(ramp.getValue(this.mass));
+//        g.fillRect(xApp - tailleApp / 2, yApp - tailleApp / 2, tailleApp + 1, tailleApp + 1);
 
         /*
          * Si c'est une source, on affiche un fond rouge. Si c'est un puits, on
@@ -248,6 +269,9 @@ public class Square {
         for (Particle p : this.particleList) {
             p.display(g, x0, y0, zoom, hauteurPanneau);
         }
+        for (Food f : foodList) {
+            f.display(g, x0, y0, zoom, hauteurPanneau);
+        }
     }
 
     /* Définir les éléments qui doivent être sélectionnés. */
@@ -265,6 +289,8 @@ public class Square {
          */
         for (int i = this.particleList.size() - 1; i >= 0; i--) {
             if (this.particleList.get(i).isSelected()) {
+                Particle p = particleList.get(i);
+                mass -= p.getMass();
                 this.particleList.remove(i);
             }
         }
@@ -284,6 +310,7 @@ public class Square {
         p.setVx(vx);
         p.setVy(vy);
         this.particleList.add(p);
+        this.mass += p.getMass();
     }
 
     public void createParticle(double x, double y) {
@@ -300,7 +327,11 @@ public class Square {
         for (int i = 0; i < nb; i++) {
             x = this.xCenter + (gen.nextDouble() - 0.5) * this.size;
             y = this.yCenter + (gen.nextDouble() - 0.5) * this.size;
-            this.createParticle(x, y, 0, 0, particleType);
+            if (particleType.equals("")) {
+                this.createParticle(x, y, 0, 0, this.sourceType);
+            } else {
+                this.createParticle(x, y, 0, 0, particleType);
+            }
         }
     }
 
@@ -309,6 +340,7 @@ public class Square {
         for (Particle p : particleList) {
             if (p.isSelected()) {
                 Particle newP = p.clone();
+                newP.setMass(p.getMass());
                 p.setSelected(false);
                 newP.setSelected(true);
                 duplicateParticles.add(newP);
@@ -317,6 +349,7 @@ public class Square {
 
         for (Particle newP : duplicateParticles) {
             particleList.add(newP);
+            mass += newP.getMass();
         }
     }
 
@@ -326,6 +359,8 @@ public class Square {
      */
     private void supprimerParticule() {
         if (this.particleList.size() > 0) {
+            Particle p = particleList.get(0);
+            mass -= p.getMass();
             this.particleList.remove(0);
         }
     }
@@ -339,6 +374,7 @@ public class Square {
     /* Recevoir une particule qui existe déjà. */
     public void receiveParticle(Particle p) {
         this.particleList.add(p);
+        mass += p.getMass();
     }
 
     public String toString() {
@@ -452,9 +488,6 @@ public class Square {
             this.particleList.get(i).computeSpeed(dt, gravity);
         }
 
-        if (this.numLigne == 11 && this.numColonne >= 5 && this.numColonne <= 15) {
-            influenceMeanSpeed(30.0, 0.0);
-        }
     }
 
     public void processRectangles(ArrayList<Rectangle> list) {
@@ -506,6 +539,7 @@ public class Square {
 
         this.sourceType = newType;
         if (this.isSource) {
+
             switch (newType) {
                 case "typeA":
                     this.color = Color.red;
@@ -566,6 +600,7 @@ public class Square {
         this.debit = 0;
         this.count = 0;
         this.isWall = false;
+        this.color = defaultColor;
     }
 
     /**
@@ -722,4 +757,86 @@ public class Square {
     public void setMustReact(boolean newMustReact) {
         mustReact = newMustReact;
     }
+
+    public void computeMass() {
+        mass = 0;
+        for (Particle p : particleList) {
+            mass += p.getMass();
+        }
+    }
+
+    /**
+     * Apply to all particles of this square the force of gravity coming from
+     * other paticles in the given square.
+     *
+     */
+    public void applyGravity(double dt, Square other) {
+        for (Particle p : particleList) {
+            for (Particle otherP : other.particleList) {
+                p.pullWithGravity(otherP, dt);
+            }
+        }
+    }
+
+    /**
+     * Apply to all particles of this square the force of gravity coming from
+     * all other particles of the same square.
+     *
+     */
+    public void applyGravity(double dt) {
+        for (int i = 0; i < particleList.size(); i++) {
+            for (int j = i + 1; j < particleList.size(); j++) {
+                // Change the speed of both particles i and j.
+                Particle pi = particleList.get(i);
+                Particle pj = particleList.get(j);
+                pi.pullWithGravity(pj, dt);
+            }
+        }
+    }
+
+    /**
+     * Increase or decrease the amount of resources available on the terrain for
+     * the particles to feed.
+     *
+     * @param mustIncrease true to increase the amount of resources, false to
+     * decrease it.
+     */
+    public void increaseResources(boolean mustIncrease) {
+        int increment = 1;// The amount of foods that is added or removed each time.
+        for (int i = 0; i < increment; i++) {
+            if (mustIncrease) {
+                double x = xCenter + size * (new Random().nextDouble() - 0.5);
+                double y = yCenter + size * (new Random().nextDouble() - 0.5);
+                foodList.add(new Food(x, y));
+            } else {
+                // Delete food
+                if (foodList.size() > 0) {
+                    int index = new Random().nextInt();
+                    foodList.remove(index);
+                }
+            }
+        }
+    }
+
+    protected double getMaxPressure() {
+        double maxPressure = 0;
+        for (Particle p : particleList) {
+            if (p.getPressure() > maxPressure) {
+                maxPressure = p.getPressure();
+            }
+        }
+        return maxPressure;
+    }
+
+    double getMaxKineticEnergy() {
+        double max = 0;
+        for (Particle p : particleList) {
+            double kE = p.getKineticEnergy();
+            if (kE > max) {
+                max = kE;
+            }
+        }
+        return max;
+    }
+
 }

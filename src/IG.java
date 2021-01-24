@@ -1,3 +1,4 @@
+
 import java.awt.BorderLayout;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -44,8 +45,8 @@ public class IG {
         this.window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.panel = new GraphicPanel(this.world);
 
-        this.initWindowWidth = 1200;
-        this.initWindowHeight = 1000;
+        this.initWindowWidth = 1000;
+        this.initWindowHeight = 800;
 
         this.mouseMotionListener = new MouseMotionListener(this.panel);
         this.mouseClickListener = new MouseClickListener(this.panel);
@@ -74,8 +75,11 @@ public class IG {
         };
         particleCountTimer.schedule(countTask, 0, 1000); // Start immediately, run once every second.
 
+        this.timerPeriod = 10;
+        this.worldPeriod = 0.003;//0.0010;
+
         /* Menu. */
-        this.menu = new Menu(this.panel);
+        this.menu = new Menu(this.panel, this.worldPeriod);
         this.menu.addKeyListener(this.keyboardListener);
 
         this.window.setLayout(new BorderLayout());
@@ -98,9 +102,6 @@ public class IG {
         };
         int displayPeriod = 30;
         displayTimer.schedule(displayTask, 0, displayPeriod);
-
-        this.timerPeriod = 10;
-        this.worldPeriod = 0.003;//0.0010;
 
         this.resetAndStartTimer(timerPeriod);
     }

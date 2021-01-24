@@ -15,9 +15,9 @@ public class GraphicPanel extends JPanel {
 
     public GraphicPanel(World t) {
         this.terrain = t;
-        this.x0 = 804;
-        this.y0 = 383;
-        this.zoom = 88.4;
+        this.x0 = 616.152519;
+        this.y0 = 326.769849;
+        this.zoom = 17.489468;
         isDuplicating = false;
     }
 

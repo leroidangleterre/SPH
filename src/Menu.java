@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
-
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
@@ -40,10 +39,18 @@ public class Menu extends JPanel {
     private JButton boutonRayonPlus;
     private JButton boutonRayonMoins;
 
+    private JButton boutonOneStep;
+
+    private JButton boutonRessourcesPlus;
+    private JButton boutonRessourcesMoins;
+
     /* Le panneau sur lequel le menu a une influence. */
     private GraphicPanel lePanneau;
 
-    public Menu(GraphicPanel panneau) {
+    // period of the simulation
+    double simulationPeriod;
+
+    public Menu(GraphicPanel panneau, double worldPeriod) {
         super();
 
         // System.out.println("new Menu");
@@ -77,7 +84,13 @@ public class Menu extends JPanel {
         this.boutonRayonMoins = new JButton("rad-");
         // this.sourceFlow = new TitledTextField("Source flow");
 
-        this.setLayout(new GridLayout(3, 5));
+        this.boutonOneStep = new JButton("Step");
+        this.simulationPeriod = worldPeriod;
+
+        this.boutonRessourcesPlus = new JButton("Food+");
+        this.boutonRessourcesMoins = new JButton("Food-");
+
+        this.setLayout(new GridLayout(2, 8));
 
         this.add(this.boutonRectangle);
         this.add(this.boutonSelRectangles);
@@ -96,6 +109,9 @@ public class Menu extends JPanel {
         // this.add(this.debitPuits);
         this.add(this.boutonRayonPlus);
         this.add(this.boutonRayonMoins);
+        this.add(this.boutonOneStep);
+        this.add(this.boutonRessourcesPlus);
+        this.add(this.boutonRessourcesMoins);
 
         this.buttonList = new ArrayList<JButton>();
         this.buttonList.add(this.boutonCarreauVide);
@@ -111,6 +127,9 @@ public class Menu extends JPanel {
         this.buttonList.add(this.boutonSelRectangles);
         this.buttonList.add(this.boutonSource);
         this.buttonList.add(this.boutonSwitchVitesses);
+        this.buttonList.add(this.boutonOneStep);
+        this.buttonList.add(this.boutonRessourcesMoins);
+        this.buttonList.add(this.boutonRessourcesPlus);
         this.reglerTailleTousBoutons();
 
         this.boutonRectangle.addActionListener(new ActionListener() {
@@ -199,6 +218,26 @@ public class Menu extends JPanel {
                 lePanneau.decreaseParticleRadii();
             }
         });
+        this.boutonOneStep.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                lePanneau.getTerrain().evoluer(simulationPeriod);
+            }
+        }
+        );
+        this.boutonRessourcesPlus.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                lePanneau.getTerrain().increaseResources(true);
+                lePanneau.repaint();
+            }
+        }
+        );
+        this.boutonRessourcesMoins.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                lePanneau.getTerrain().increaseResources(false);
+                lePanneau.repaint();
+            }
+        }
+        );
 
     }
 

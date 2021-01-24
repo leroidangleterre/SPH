@@ -356,7 +356,7 @@ public class World {
     /**
      * Compute one step of evolution.
      */
-    private synchronized void evoluer(double dt) {
+    protected synchronized void evoluer(double dt) {
         this.step++;
         try {
             sem.acquire();
@@ -409,6 +409,9 @@ public class World {
                     this.getSquare(i, j).computeForces();
                 }
             }
+
+            // Gravity forces apply through the whole space.
+            applyGravity(dt);
 
             // Compute the speed of all particles of each square.
             for (int i = 0; i < this.nbLines; i++) {
@@ -555,9 +558,6 @@ public class World {
             }
             for (int i = 0; i < this.tab.size(); i++) {
                 for (int j = 0; j < this.tab.get(i).size(); j++) {
-//                    if (this.getSquare(i, j).getNbParticules() > 0) {
-//                        System.out.println("    World.display square " + i + " " + j);
-//                    }
                     this.getSquare(i, j).displayParticles(g, x0, y0, zoom, panelHeight, this.instantSpeedDisplay);
                 }
             }
@@ -778,6 +778,9 @@ public class World {
     public void createOneParticle(double x, double y, double vx, double vy) {
         Square target = this.getSquareFromCoordinates(x, y);
         if (target != null) {
+            if (!nextSourcesType.equals("typeA")) {
+                System.out.println("World.createOneParticle: type incorrect");
+            }
             target.createParticle(x, y, vx, vy, nextSourcesType);
         } else {
             System.out.println("Error World.createOneParticle(x, y, vx, vy): square does not exist");
@@ -790,7 +793,6 @@ public class World {
      * specified area, with the correct density.
      */
     private void createParticles() {
-        System.out.println("createParticles");
 
         try {
             sem.acquire();
@@ -1175,5 +1177,61 @@ public class World {
 
     public String getParticleType() {
         return this.nextSourcesType;
+    }
+
+    /**
+     * compute how much speeds are changed by gravity during the period dt
+     *
+     * @param dt
+     */
+    private void applyGravity(double dt) {
+
+        // Compute the mass of all squares.
+        computeAllSquaresMasses();
+
+        for (int line = 0; line < nbLines; line++) {
+            for (int col = 0; col < nbColumns; col++) {
+                Square s = getSquare(line, col);
+                if (s.mass != 0) {
+                    // Apply gravity between all the particles inside this square
+                    s.applyGravity(dt);
+
+                    // Apply gravity between this square and all the squares to the East on the same line
+                    for (int otherColumn = col + 1; otherColumn < nbColumns; otherColumn++) {
+                        Square otherSquare = getSquare(line, otherColumn);
+                        s.applyGravity(dt, otherSquare);
+                    }
+
+                    for (int otherLine = line + 1; otherLine < nbLines; otherLine++) {
+                        for (int otherCol = 0; otherCol < nbColumns; otherCol++) {
+                            Square otherSquare = getSquare(otherLine, otherCol);
+                            s.applyGravity(dt, otherSquare);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void computeAllSquaresMasses() {
+        for (ArrayList<Square> line : tab) {
+            for (Square s : line) {
+                s.computeMass();
+            }
+        }
+    }
+
+    /**
+     * Increase or decrease the amount of resources available on the terrain for
+     * the particles to feed.
+     *
+     * @param b true to increase the amount of resources, false to decrease it.
+     */
+    public void increaseResources(boolean b) {
+        for (ArrayList<Square> list : tab) {
+            for (Square s : list) {
+                s.increaseResources(b);
+            }
+        }
     }
 }

@@ -8,6 +8,9 @@ import java.util.Random;
 
 public class Particle {
 
+    private static int NB_PARTICLES_CREATED = 0;
+    private int id;
+
     // Either rigid bodies or SPH.
     public static boolean rigidCollision = false;
 
@@ -48,6 +51,10 @@ public class Particle {
     private static ReactionController reacCtrl = new ReactionController();
 
     public Particle(double xParam, double yParam, double rayonParam, int numLigneParam, int numColonneParam, String newType) {
+
+        this.id = NB_PARTICLES_CREATED;
+        NB_PARTICLES_CREATED++;
+
         this.position = new Vecteur(xParam, yParam);
         this.speed = new Vecteur();
         this.vAvg = new Vecteur();
@@ -97,7 +104,8 @@ public class Particle {
     }
 
     public Particle clone() {
-        return new Particle(this.position.getX(), this.position.getY(), this.radius, this.density, this.numLine, this.numColumn);
+        return new Particle(this.position.getX(), this.position.getY(), this.radius,
+                this.density, this.numLine, this.numColumn);
     }
 
     public void setColor(Color c) {
@@ -240,6 +248,10 @@ public class Particle {
         this.pressure = this.pressureCst * (this.density - this.refDensity);
     }
 
+    public double getPressure() {
+        return this.pressure;
+    }
+
     /**
      * Get the distance to another particle.
      */
@@ -328,18 +340,18 @@ public class Particle {
         int yApp = (int) (panelHeight - (this.getY() * zoom + y0));
         int apparentRadius = (int) (this.radius * zoom);
 
-        // The disk that represents the particle.
+//        // The disk that represents the particle.
         this.computeColor();
         g.setColor(this.color);
-        g.fillOval(xApp - apparentRadius, yApp - apparentRadius, 2 * apparentRadius, 2 * apparentRadius);
-
+//        g.fillOval(xApp - apparentRadius, yApp - apparentRadius, 2 * apparentRadius, 2 * apparentRadius);
         // Color for the central dot and the border
         if (this.selected) {
             g.setColor(Color.blue);
         } else {
             g.setColor(this.color);
         }
-        g.fillOval(xApp - apparentRadius / 10, yApp - apparentRadius / 10, apparentRadius / 5, apparentRadius / 5); // central dot
+        int centerRadius = Math.max(2, apparentRadius / 10);
+        g.fillOval(xApp - centerRadius, yApp - centerRadius, 2 * centerRadius, 2 * centerRadius); // central dot
         // Border
         g.setColor(new Color(0, 0, 0, 128));
         g.drawOval(xApp - apparentRadius, yApp - apparentRadius, 2 * apparentRadius, 2 * apparentRadius); // border
@@ -822,8 +834,49 @@ public class Particle {
      * @return
      */
     public boolean touches(Particle p) {
-//        System.out.println("radii: " + this.radius + ", " + p.radius + ", distance: " + Math.sqrt(this.distanceAuCarre(p)));
-//        System.out.println((Math.sqrt(this.distanceAuCarre(p)) < this.radius + p.radius) + "  ");
         return Math.sqrt(this.distanceAuCarre(p)) < this.radius + p.radius;
+    }
+
+    /**
+     * Get the mass of the particle.
+     *
+     */
+    public double getMass() {
+        return this.mass;
+    }
+
+    /**
+     * Set the mass of the particle.
+     *
+     */
+    public void setMass(double newMass) {
+        this.mass = newMass;
+    }
+
+    /**
+     * Apply gravity to the speeds of both this particle and the parameter.
+     *
+     * @param other the second particle implicated in this gravitational
+     * interaction.
+     * @param dt period of time during which gravity pulls on the particles
+     */
+    public void pullWithGravity(Particle other, double dt) {
+
+        double distanceSquared = distanceAuCarre(other);
+        double distance = Math.sqrt(distanceSquared);
+        double gravConstant = 1000000.0;
+
+        double gravityForce = gravConstant * this.mass * other.mass / distanceSquared;
+
+        // Unit vector
+        double dx = (other.position.getX() - this.position.getX()) / distance;
+        double dy = (other.position.getY() - this.position.getY()) / distance;
+
+        // Force applied on this particle by other
+        double dfX = gravityForce * dx;
+        double dfY = gravityForce * dy;
+
+        this.speed.increment(dfX * dt, dfY * dt);
+        other.speed.increment(-dfX * dt, -dfY * dt);
     }
 }
